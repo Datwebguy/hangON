@@ -194,9 +194,7 @@ function renderRequests(requests) {
 }
 
 async function startDashboard() {
-  const sessionResponse = await fetch('/api/session', { credentials: 'same-origin' });
-  const sessionBody = await sessionResponse.json().catch(() => ({}));
-  if (!sessionResponse.ok) throw new Error(sessionBody.error?.message || 'Your workspace session could not be created.');
+  const sessionBody = await window.HangOnAuth.ensureSession();
   csrfToken = sessionBody.data?.csrf || '';
   const [workspaceResponse, requestsResponse, integrationResponse] = await Promise.all([
     fetch('/api/workspace', { credentials: 'same-origin' }),

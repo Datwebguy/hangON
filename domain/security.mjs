@@ -62,10 +62,13 @@ export function isProduction() {
 }
 
 export function hasConfiguredOperatorAccess(req) {
-  const expected = process.env.HANGON_OPERATOR_TOKEN;
-  if (!expected) return false;
   const supplied = req.headers['x-hangon-operator-token'] || (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  return safeEqual(String(supplied), expected);
+  return verifyOperatorToken(supplied);
+}
+
+export function verifyOperatorToken(value) {
+  const expected = process.env.HANGON_OPERATOR_TOKEN;
+  return Boolean(expected) && safeEqual(String(value || ''), expected);
 }
 
 export { COOKIE_NAME };
