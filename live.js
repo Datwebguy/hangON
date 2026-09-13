@@ -24,7 +24,7 @@ function showChange(label, detail, tone = 'neutral') {
 }
 
 function setReady() { voice?.setDisabled(false); session = null; start.disabled = false; stop.disabled = true; status.textContent = 'Ready'; status.className = 'status-chip status-safe'; title.textContent = 'Ready to listen'; hint.textContent = 'Nothing is being recorded now.'; }
-function finish() { if (!session) return; const current = session; session = null; if (current.ws && ![WebSocket.CLOSED, WebSocket.CLOSING].includes(current.ws.readyState)) current.ws.close(1000, 'HangON ended the session'); current.stream?.getTracks().forEach((track) => track.stop()); current.capture?.close(); current.playback?.close(); setReady(); }
+function finish(resetUi = true) { if (!session) return; const current = session; session = null; if (current.ws && ![WebSocket.CLOSED, WebSocket.CLOSING].includes(current.ws.readyState)) current.ws.close(1000, 'HangON ended the session'); current.stream?.getTracks().forEach((track) => track.stop()); current.capture?.close(); current.playback?.close(); if (resetUi) setReady(); else { voice?.setDisabled(false); start.disabled = false; stop.disabled = true; } }
 
 function resample(samples, sourceRate, targetRate) {
   if (sourceRate === targetRate) return Float32Array.from(samples, (sample) => sample / 32768);
@@ -42,7 +42,7 @@ async function begin() {
     await capture.resume(); await playback.resume(); await capture.audioWorklet.addModule('./pcm-processor.js'); await playback.audioWorklet.addModule('./pcm-processor.js');
     const playbackNode = new AudioWorkletNode(playback, 'hangon-playback'); playbackNode.connect(playback.destination);
     let stream;
-    try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); } catch (error) { if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') throw new Error('Microphone access is needed to start the call.'); throw new Error('HangON could not access the microphone.'); }
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true } }); } catch (error) { if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') throw new Error('Microphone access is needed to start the call.'); throw new Error('HangON could not access the microphone.'); }
     const source = capture.createMediaStreamSource(stream); const worklet = new AudioWorkletNode(capture, 'hangon-pcm', { processorOptions: { inputSampleRate: capture.sampleRate, targetSampleRate: 24000 } }); const mute = capture.createGain(); mute.gain.value = 0; source.connect(worklet).connect(mute).connect(capture.destination);
     const url = new URL('wss://agents.assemblyai.com/v1/ws'); url.searchParams.set('token', config.token); const ws = new WebSocket(url); let ready = false; let confirmationRequested = false; let confirmationAccepted = false; let lastEvent = null; let flushingTools = false; const pending = []; const audioQueue = [];
     const b64 = (buffer) => { const bytes = new Uint8Array(buffer); let output = ''; for (let index = 0; index < bytes.length; index += 0x8000) output += String.fromCharCode(...bytes.subarray(index, Math.min(index + 0x8000, bytes.length))); return btoa(output); };
@@ -93,18 +93,20 @@ async function begin() {
     ws.addEventListener('message', async (event) => {
       let message; try { message = JSON.parse(event.data); } catch { return; }
       if (message.type === 'session.ready') { lastEvent = 'session.ready'; ready = true; while (audioQueue.length && ws.readyState === WebSocket.OPEN) sendAudio(audioQueue.shift()); status.textContent = 'Live'; status.className = 'status-chip status-safe'; title.textContent = 'Listening'; stop.disabled = false; hint.textContent = 'Speak naturally. End the call when you are finished.'; }
-      if (message.type === 'input.speech.started' || message.type === 'reply.started') lastEvent = message.type;
+      if (message.type === 'input.speech.started') { flushPlayback(); lastEvent = message.type; }
+      if (message.type === 'reply.started') lastEvent = message.type;
       if (message.type === 'transcript.user') { const text = message.text || ''; addMessage('caller', text); lastEvent = 'transcript.user'; if (confirmationRequested && /\b(yes|correct|confirm|that is right|that’s right|thats right)\b/i.test(text)) { confirmationAccepted = true; confirmationRequested = false; } }
       if (message.type === 'transcript.agent') { const text = message.text || ''; addMessage('agent', text); lastEvent = 'transcript.agent'; confirmationRequested = /\b(is that correct|shall i|would you like me to|please confirm|say yes|okay to save)\b/i.test(text); if (confirmationRequested) confirmationAccepted = false; }
       if (message.type === 'tool.call') { pending.push(message); showChange('Request to review', 'Waiting for a clear summary and confirmation', 'warn'); void flushTools(); }
       if (message.type === 'reply.audio') { const samples = pcm(message.data); const output = resample(samples, 24000, playback.sampleRate); playbackNode.port.postMessage({ type: 'audio', samples: output.buffer }, [output.buffer]); }
       if (message.type === 'reply.done') { lastEvent = 'reply.done'; if (message.status === 'interrupted') { pending.length = 0; confirmationRequested = false; confirmationAccepted = false; flushPlayback(); } else void flushTools(); }
-      if (message.type === 'session.error' || message.type === 'error') { status.textContent = 'Call error'; status.className = 'status-chip status-warn'; hint.textContent = 'HangON could not continue this call. Nothing was saved automatically.'; }
+      if (message.type === 'session.error' || message.type === 'error') { lastEvent = 'session.error'; status.textContent = 'Call error'; status.className = 'status-chip status-warn'; hint.textContent = `HangON could not continue this call${message.message ? `: ${message.message}` : '.'} Nothing was saved automatically.`; }
       if (message.type === 'session.ended') finish();
     });
-    ws.addEventListener('error', () => { status.textContent = 'Call error'; status.className = 'status-chip status-warn'; hint.textContent = 'The voice connection was interrupted. Try again.'; }); ws.addEventListener('close', () => { if (session) finish(); }); session = { ws, stream, capture, playback };
+    ws.addEventListener('error', () => { lastEvent = 'socket.error'; status.textContent = 'Call error'; status.className = 'status-chip status-warn'; hint.textContent = 'The voice connection was interrupted. Try again. Nothing was saved automatically.'; }); ws.addEventListener('close', () => { if (session) finish(!['session.error', 'socket.error'].includes(lastEvent)); }); session = { ws, stream, capture, playback };
   } catch (error) { status.textContent = 'Could not start'; status.className = 'status-chip status-warn'; hint.textContent = error.message || 'HangON could not start the call.'; start.disabled = false; voice?.setDisabled(false); title.textContent = 'Ready to listen'; }
 }
 
 function end() { if (!session) return; if (session.ws.readyState === WebSocket.OPEN) session.ws.send(JSON.stringify({ type: 'session.end' })); else finish(); }
+window.addEventListener('pagehide', () => { if (session?.ws?.readyState === WebSocket.OPEN) session.ws.send(JSON.stringify({ type: 'session.end' })); });
 start.addEventListener('click', begin); stop.addEventListener('click', end);
