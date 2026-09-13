@@ -36,7 +36,7 @@ function resample(samples, sourceRate, targetRate) {
 async function begin() {
   voice?.setDisabled(true); start.disabled = true; status.textContent = 'Connecting'; status.className = 'status-chip status-neutral'; title.textContent = 'Connecting'; hint.textContent = 'HangON is preparing a private voice session.';
   try {
-    const sessionBody = await window.HangOnAuth.ensureSession(); csrfToken = sessionBody.data?.csrf || '';
+    const sessionBody = await window.HangOnAuth.ensureDemoSession(); csrfToken = sessionBody.data?.csrf || '';
     const configResponse = await fetch('/api/voice-session', { credentials: 'same-origin' }); const configBody = await configResponse.json().catch(() => ({})); if (!configResponse.ok || !configBody.data?.token) throw new Error(configBody.error?.message || 'HangON could not connect to the voice service.'); const config = configBody.data; voice?.setVoices(config.voice?.voices, config.voice?.defaultVoice);
     const capture = new AudioContext(); let playback; try { playback = new AudioContext({ sampleRate: 24000, latencyHint: 'interactive' }); } catch { playback = new AudioContext({ latencyHint: 'interactive' }); }
     await capture.resume(); await playback.resume(); await capture.audioWorklet.addModule('./pcm-processor.js'); await playback.audioWorklet.addModule('./pcm-processor.js');

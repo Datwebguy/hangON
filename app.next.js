@@ -194,7 +194,13 @@ function renderRequests(requests) {
 }
 
 async function startDashboard() {
-  const sessionBody = await window.HangOnAuth.ensureSession();
+  const operatorRequested = new URLSearchParams(window.location.search).get('operator') === '1';
+  const sessionBody = await window.HangOnAuth.ensureSession({ interactive: operatorRequested });
+  if (!sessionBody) {
+    setStatus('Public demo ready. Start a call to explore HangON.', 'safe');
+    callList.replaceChildren(Object.assign(document.createElement('div'), { className: 'empty-row', textContent: 'Operator activity is private. Start a call to create an isolated demo request.' }));
+    return;
+  }
   csrfToken = sessionBody.data?.csrf || '';
   const [workspaceResponse, requestsResponse, integrationResponse] = await Promise.all([
     fetch('/api/workspace', { credentials: 'same-origin' }),

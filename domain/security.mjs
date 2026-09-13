@@ -27,11 +27,11 @@ export function parseCookies(header = '') {
   }).filter(([key]) => key));
 }
 
-export function createSession(workspaceId) {
+export function createSession(workspaceId, role = 'operator') {
   const payload = {
     sid: crypto.randomUUID(),
     workspace_id: workspaceId,
-    role: 'operator',
+    role,
     csrf: crypto.randomBytes(24).toString('base64url'),
     exp: Date.now() + SESSION_TTL_MS
   };

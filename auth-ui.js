@@ -76,14 +76,21 @@
     });
   }
 
-  async function ensureSession() {
+  async function ensureSession({ interactive = true } = {}) {
     const response = await fetch('/api/session', { credentials: 'same-origin' });
     const body = await response.json().catch(() => ({}));
     if (response.ok) return body;
-    if (body.error?.code === 'authentication_required') return showLogin();
+    if (body.error?.code === 'authentication_required') return interactive ? showLogin() : null;
     if (body.error?.code === 'auth_not_configured') throw new Error('Operator access is not configured for this deployment.');
     throw new Error(body.error?.message || 'Your workspace session could not be created.');
   }
 
-  window.HangOnAuth = { ensureSession };
+  async function ensureDemoSession() {
+    const response = await fetch('/api/demo/session', { credentials: 'same-origin' });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.error?.message || 'The public demo session could not be created.');
+    return body;
+  }
+
+  window.HangOnAuth = { ensureSession, ensureDemoSession };
 }());

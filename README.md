@@ -136,6 +136,12 @@ The configuration surface is intentionally small. Authentication values protect 
 
 Production deployments should provide secrets through the hosting platform rather than through committed files. The live demonstration at `https://tryhangon.vercel.app` is a product preview. Its operator and provider capabilities remain intentionally unavailable when production secrets have not been configured, which is safer than silently running an unauthenticated workflow.
 
+## Public demo and operator access
+
+The live call screen is designed for public exploration. A visitor receives a signed, session isolated demo session and can try the AssemblyAI voice intake flow without receiving access to the operator workspace. Demo requests are scoped to that visitor session and do not trigger configured external webhook delivery.
+
+The requests dashboard remains private. Operators sign in with the server configured `HANGON_OPERATOR_TOKEN`, after which HangON issues a signed session cookie and uses the existing CSRF protection for workspace operations. This keeps the product easy to explore while ensuring that request history, workspace configuration, and connected integrations are not exposed to every visitor.
+
 ## Verify the project
 
 The test suite covers the request domain, authentication behavior, idempotent creation, sanitized storage, and signed confirmation behavior. Run the tests with the project command below.

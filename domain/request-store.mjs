@@ -50,8 +50,8 @@ export function createRequestStore(file, options = {}) {
         records.unshift(pending);
         await write(records);
 
-        const integration = options.getDeliveryConfig ? await options.getDeliveryConfig(pending.workspace_id) : null;
-        const delivery = await deliverPreparedRequest(pending, integration);
+        const integration = scope.demo ? null : (options.getDeliveryConfig ? await options.getDeliveryConfig(pending.workspace_id) : null);
+        const delivery = scope.demo ? { status: 'demo_only', attempts: 0 } : await deliverPreparedRequest(pending, integration);
         const delivered = { ...pending, delivery };
         const index = records.findIndex((item) => item.id === pending.id);
         if (index >= 0) records[index] = delivered;

@@ -36,6 +36,17 @@ test('the request store is idempotent under repeated writes', async () => {
   await fsp.rm(directory, { recursive: true, force: true });
 });
 
+test('public demo requests are isolated and never deliver externally', async () => {
+  const directory = await fsp.mkdtemp(path.join(os.tmpdir(), 'hangon-demo-'));
+  const store = createRequestStore(path.join(directory, 'requests.json'), { getDeliveryConfig: async () => ({ url: 'https://example.com/webhook', secret: 'secret' }) });
+  const request = createPreparedRequest({ request_summary: 'Please prepare a demo follow-up.', details: { channel: 'demo' }, confirmed: true, idempotency_key: 'demo-call-123', source: 'voice' }, { workspaceId: 'workspace-a', sessionId: 'demo-session-a' });
+  const result = await store.create(request, { workspaceId: 'workspace-a', sessionId: 'demo-session-a', demo: true });
+  assert.equal(result.record.delivery.status, 'demo_only');
+  assert.equal((await store.list({ workspaceId: 'workspace-a', sessionId: 'demo-session-a', demo: true })).length, 1);
+  assert.equal((await store.list({ workspaceId: 'workspace-a', sessionId: 'demo-session-b', demo: true })).length, 0);
+  await fsp.rm(directory, { recursive: true, force: true });
+});
+
 test('confirmation is bound to the exact sanitized proposal and cannot be reused for changed content', () => {
   const input = validateRequest({ request_summary: 'Please call me back about an invoice.', details: { channel: 'phone', transcript: 'never store this' }, confirmed: true, idempotency_key: 'call-confirm-123' });
   assert.equal(input.ok, true);

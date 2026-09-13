@@ -65,6 +65,20 @@ test('production operator access is completed through the login endpoint', async
     const session = await fetch(`${baseUrl}/api/session`, { headers: { cookie } });
     assert.equal(session.status, 200);
     assert.equal((await session.json()).data.role, 'operator');
+
+    const demo = await fetch(`${baseUrl}/api/demo/session`);
+    assert.equal(demo.status, 200);
+    assert.equal((await demo.json()).data.role, 'demo');
+    const demoCookie = demo.headers.get('set-cookie')?.split(';', 1)[0];
+    assert.ok(demoCookie);
+
+    const blockedOperatorPage = await fetch(`${baseUrl}/api/session`, { headers: { cookie: demoCookie } });
+    assert.equal(blockedOperatorPage.status, 403);
+    assert.equal((await blockedOperatorPage.json()).error.code, 'operator_required');
+
+    const demoRequests = await fetch(`${baseUrl}/api/requests`, { headers: { cookie: demoCookie } });
+    assert.equal(demoRequests.status, 200);
+    assert.deepEqual((await demoRequests.json()).data, []);
   } finally {
     child.kill();
     await once(child, 'exit').catch(() => {});
