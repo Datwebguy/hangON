@@ -1,0 +1,23 @@
+{
+  "name": "hangon",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "video:studio": "remotion studio demo-video/src/index.jsx",
+    "video:render": "remotion render demo-video/src/index.jsx HangONDemo demo-video/out/hangon-demo.mp4 --codec=h264 --audio --public-dir=demo-video/public",
+    "video:still": "remotion still demo-video/src/index.jsx HangONDemo demo-video/out/hangon-demo.png --frame=900 --public-dir=demo-video/public"
+  },
+  "devDependencies": {
+    "@remotion/bundler": "^4.0.524",
+    "@remotion/cli": "^4.0.524",
+    "@remotion/renderer": "^4.0.524",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.524"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

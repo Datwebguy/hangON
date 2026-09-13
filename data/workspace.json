@@ -1,0 +1,49 @@
+{
+  "id": "workspace-local",
+  "name": "Your workspace",
+  "description": "A voice front desk for clear requests and reliable follow-up.",
+  "voice": {
+    "default": "anna",
+    "allowed": ["anna", "michael", "jane", "alba"]
+  },
+  "routing": {
+    "default_route": "general",
+    "routes": [
+      {
+        "id": "billing",
+        "label": "Billing & payments",
+        "description": "Questions about charges, invoices, payments, refunds, and fees.",
+        "keywords": ["payment", "billing", "bill", "charge", "invoice", "refund", "fee"]
+      },
+      {
+        "id": "technical",
+        "label": "Technical support",
+        "description": "Questions about access, setup, errors, or a service not working.",
+        "keywords": ["technical", "error", "not working", "login", "access", "setup", "broken"]
+      },
+      {
+        "id": "general",
+        "label": "General requests",
+        "description": "Requests that need team review but do not match a configured queue.",
+        "keywords": []
+      }
+    ]
+  },
+  "capabilities": {
+    "intake": {
+      "enabled": true,
+      "label": "Prepare and route requests",
+      "description": "Capture a caller's request, confirm it, and send it to the configured internal queue."
+    },
+    "lookup": {
+      "enabled": false,
+      "label": "Check connected information",
+      "description": "Not connected yet. A workspace administrator must connect an information source."
+    },
+    "actions": {
+      "enabled": false,
+      "label": "Complete changes",
+      "description": "Not connected yet. A workspace administrator must connect an action system."
+    }
+  }
+}

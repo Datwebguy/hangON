@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="./hangon-logo.png">
+    <title>HangON | Start a call</title>
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./production.css">
+  </head>
+  <body>
+    <div class="app-frame">
+      <header class="app-header">
+        <a class="brand" href="./index.html" aria-label="HangON home">
+          <img class="brand-logo" src="./hangon-logo.png" alt="" aria-hidden="true">
+          <span>HangON</span>
+        </a>
+        <nav class="main-nav" aria-label="Main navigation">
+          <a href="./index.html">Requests</a>
+          <a class="active" href="./live.html">Start a call</a>
+        </nav>
+        <div class="workspace-switcher">
+          <span class="online-dot" aria-hidden="true"></span>
+          <span>Workspace</span>
+        </div>
+      </header>
+      <main class="page-shell call-shell">
+        <a class="back-link" href="./index.html">← Requests</a>
+        <section class="call-heading">
+          <div>
+            <p class="eyebrow">New call</p>
+            <h1>Let the caller explain.</h1>
+            <p class="page-intro">HangON turns the conversation into a clear request and asks for confirmation before preparing it.</p>
+            <div id="voicePlacement"></div>
+          </div>
+          <span class="status-chip status-safe" id="callStatus" role="status" aria-live="polite">Ready</span>
+        </section>
+        <section class="call-layout">
+          <article class="panel conversation-panel">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Conversation</p>
+                <h2 id="conversationTitle">Ready to listen</h2>
+              </div>
+              <button class="button button-primary" id="start" type="button">Start call</button>
+            </div>
+            <div class="conversation" id="conversation" role="log" aria-live="polite" aria-label="Call conversation">
+              <div class="conversation-empty" id="conversationEmpty">
+                <span class="mic-ring" aria-hidden="true">◉</span>
+                <p>Your conversation will appear here.</p>
+                <span>Speak naturally. You can end the call at any time.</span>
+              </div>
+            </div>
+            <div class="call-actions">
+              <button class="button button-secondary" id="stop" type="button" disabled>End call</button>
+              <span id="callHint" role="status" aria-live="polite">Nothing is being recorded.</span>
+            </div>
+          </article>
+          <aside class="panel changes-panel" aria-labelledby="changes-heading">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Review</p>
+                <h2 id="changes-heading">Request status</h2>
+              </div>
+              <span class="status-chip status-neutral" id="changeStatus">Waiting</span>
+            </div>
+            <div class="change-list" id="changeList">
+              <div class="change-empty">A request summary will appear here before anything is prepared.</div>
+            </div>
+            <div class="protection-note">
+              <span class="lock-mark" aria-hidden="true">✓</span>
+              <p><strong>Confirmation required</strong><span>HangON does not silently change connected records.</span></p>
+            </div>
+          </aside>
+        </section>
+      </main>
+    </div>
+    <script src="./voice-ui.js"></script>
+    <script src="./live.js"></script>
+  </body>
+</html>

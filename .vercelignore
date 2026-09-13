@@ -1,0 +1,14 @@
+node_modules/
+demo-video/out/
+demo-video/public/narration.wav
+demo-video/public/narration-edge.mp3
+data/integration-master.key
+data/requests.json
+data/requests.json.bak
+.env
+.env.*
+!.env.example
+*.md
+AGENTS.md
+CONTEXT.md
+LIVE_SETUP.md

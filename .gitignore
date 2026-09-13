@@ -1,0 +1,27 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+*.tmp
+*.bak
+*.cache
+coverage/
+test-results/
+data/requests.json
+data/requests.json.bak
+data/integration-master.key
+data/integrations.json
+
+# Local-only project and agent notes; keep the public repository focused on the application.
+AGENTS.md
+CONTEXT.md
+LIVE_SETUP.md
+
+.vercel
+
+# Generated Remotion renders and local narration output.
+demo-video/out/
+demo-video/public/narration.wav
+demo-video/public/narration-edge.mp3
+node_modules/.remotion/
