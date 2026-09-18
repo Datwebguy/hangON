@@ -1,5 +1,83 @@
 [
   {
+    "id": "job-e5c9e2bf",
+    "customer_name": "Sarah Miller",
+    "phone": "(555) 301-4492",
+    "service_type": "Send appointment confirmation details for Emmanuel's kitchen plumbing service at 631 N Broad Street, scheduled for tomorrow at 3:30 PM, to princeabel2000 at gmail dot com.",
+    "urgency": "urgent",
+    "scheduled_time": "Friday at 10:30 AM",
+    "address": "742 Evergreen Terrace",
+    "job_notes": "Send appointment confirmation details for Emmanuel's kitchen plumbing service at 631 N Broad Street, scheduled for tomorrow at 3:30 PM, to princeabel2000 at gmail dot com.",
+    "status": "confirmed",
+    "record_changed": true,
+    "dispatched_to": "Mike (Apex Owner / Pro)",
+    "sms_dispatch": {
+      "status": "sent",
+      "recipient": "Mike (Apex Dispatch Phone)",
+      "timestamp": "2026-09-18T16:29:39.784Z",
+      "message": "🚨 NEW JOB: Sarah Miller | Send appointment confirmation details for Emmanuel's kitchen plumbing service at 631 N Broad Street, scheduled for tomorrow at 3:30 PM, to princeabel2000 at gmail dot com. | Friday at 10:30 AM | 742 Evergreen Terrace | Urgency: URGENT"
+    },
+    "dictation_metadata": {
+      "raw_speech": null,
+      "cleaned_text": null,
+      "self_correction_resolved": true,
+      "model": "AssemblyAI Universal-3.5 Pro Dictation"
+    },
+    "created_at": "2026-09-18T16:29:39.784Z"
+  },
+  {
+    "id": "job-d5f394e2",
+    "customer_name": "Emmanuel",
+    "phone": "930-642-8890",
+    "service_type": "Kitchen plumbing repair",
+    "urgency": "standard",
+    "scheduled_time": "Tomorrow at 3:30 PM",
+    "address": "631 N Broad Street, Middletown, Delaware",
+    "job_notes": "Booked via HangON Voice Front Desk. AssemblyAI Dictation verified.",
+    "status": "confirmed",
+    "record_changed": true,
+    "dispatched_to": "Mike (Apex Owner / Pro)",
+    "sms_dispatch": {
+      "status": "sent",
+      "recipient": "Mike (Apex Dispatch Phone)",
+      "timestamp": "2026-09-18T16:28:25.568Z",
+      "message": "🚨 NEW JOB: Emmanuel | Kitchen plumbing repair | Tomorrow at 3:30 PM | 631 N Broad Street, Middletown, Delaware | Urgency: STANDARD"
+    },
+    "dictation_metadata": {
+      "raw_speech": null,
+      "cleaned_text": null,
+      "self_correction_resolved": true,
+      "model": "AssemblyAI Universal-3.5 Pro Dictation"
+    },
+    "created_at": "2026-09-18T16:28:25.568Z"
+  },
+  {
+    "id": "job-e5d2f919",
+    "customer_name": "Test Customer",
+    "phone": "(555) 301-4492",
+    "service_type": "Pipe Burst Emergency",
+    "urgency": "emergency",
+    "scheduled_time": "Tomorrow at 10:30 AM",
+    "address": "123 Main St",
+    "job_notes": "Booked via HangON Voice Front Desk. AssemblyAI Dictation verified.",
+    "status": "confirmed",
+    "record_changed": true,
+    "dispatched_to": "Mike (Apex Owner / Pro)",
+    "sms_dispatch": {
+      "status": "sent",
+      "recipient": "Mike (Apex Dispatch Phone)",
+      "timestamp": "2026-09-18T14:43:04.586Z",
+      "message": "🚨 NEW JOB: Test Customer | Pipe Burst Emergency | Tomorrow at 10:30 AM | 123 Main St | Urgency: EMERGENCY"
+    },
+    "dictation_metadata": {
+      "raw_speech": null,
+      "cleaned_text": null,
+      "self_correction_resolved": true,
+      "model": "AssemblyAI Universal-3.5 Pro Dictation"
+    },
+    "created_at": "2026-09-18T14:43:04.586Z"
+  },
+  {
     "id": "job-seed-1",
     "customer_name": "David Chen",
     "phone": "(555) 234-8901",

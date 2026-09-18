@@ -30,11 +30,17 @@
           <a href="./live.html" class="nav-highlight">Start Live Call</a>
         </nav>
 
-        <div class="workspace-status-badge">
-          <span class="pulse-dot" aria-hidden="true"></span>
-          <div class="status-info">
-            <strong id="headerWorkspaceName">Apex Plumbing and Electrical</strong>
-            <span class="status-caption">Voice Dispatch Active</span>
+        <div class="header-right-group">
+          <button type="button" class="theme-toggle-btn" aria-label="Toggle theme">
+            <span class="theme-icon">Light</span>
+          </button>
+
+          <div class="workspace-status-badge">
+            <span class="pulse-dot" aria-hidden="true"></span>
+            <div class="status-info">
+              <strong id="headerWorkspaceName">Apex Home Services</strong>
+              <span class="status-caption">Voice Dispatch Active</span>
+            </div>
           </div>
         </div>
       </header>
@@ -206,6 +212,7 @@
       </footer>
     </div>
 
+    <script src="./theme-toggle.js"></script>
     <script src="./auth-ui.js"></script>
     <script src="./voice-ui.js"></script>
     <script src="./app.next.js"></script>

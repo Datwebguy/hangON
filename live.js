@@ -32,6 +32,7 @@ const lemurPartsList = document.querySelector('#lemurPartsList');
 
 const scenarioWaterHeater = document.querySelector('#scenarioWaterHeater');
 const scenarioElectrical = document.querySelector('#scenarioElectrical');
+const scenarioHvac = document.querySelector('#scenarioHvac');
 const scenarioDrain = document.querySelector('#scenarioDrain');
 
 const voice = window.HangOnVoice?.mount(document.querySelector('#voicePlacement'));
@@ -39,6 +40,33 @@ const voice = window.HangOnVoice?.mount(document.querySelector('#voicePlacement'
 let csrfToken = '';
 let session = null;
 let simulatedCallRunning = false;
+
+function pcm(encoded) {
+  const raw = atob(encoded);
+  const output = new Int16Array(raw.length / 2);
+  for (let i = 0; i < output.length; i += 1) {
+    output[i] = raw.charCodeAt(i * 2) | (raw.charCodeAt(i * 2 + 1) << 8);
+  }
+  return output;
+}
+
+function resample(samples, sourceRate, targetRate) {
+  if (sourceRate === targetRate) {
+    return Float32Array.from(samples, (sample) => sample / 32768);
+  }
+  const ratio = sourceRate / targetRate;
+  const targetCount = Math.floor(samples.length / ratio);
+  const output = new Float32Array(targetCount);
+  for (let i = 0; i < targetCount; i += 1) {
+    const position = i * ratio;
+    const left = Math.floor(position);
+    const fraction = position - left;
+    const a = (samples[left] || 0) / 32768;
+    const b = (samples[left + 1] || samples[left] || 0) / 32768;
+    output[i] = a + (b - a) * fraction;
+  }
+  return output;
+}
 
 function addMessage(who, text) {
   emptyState?.remove();
@@ -504,11 +532,22 @@ async function begin() {
         void flushTools();
       }
 
+      if (message.type === 'reply.audio') {
+        const samples = pcm(message.data);
+        const output = resample(samples, 24000, playback.sampleRate);
+        playbackNode.port.postMessage({ type: 'audio', samples: output.buffer }, [output.buffer]);
+      }
+
       if (message.type === 'reply.done') {
         lastEvent = message.type;
+        if (message.status === 'interrupted') {
+          pending.length = 0;
+          flushPlayback();
+        } else {
+          void flushTools();
+        }
         updateVisualizer('listening');
         title.textContent = 'Listening for Caller';
-        void flushTools();
       }
     });
 
@@ -678,6 +717,35 @@ scenarioElectrical?.addEventListener('click', () => {
         '200 Amp Main Breaker and GFCI Replacements',
         'Digital Multimeter and Insulated Tool Kit',
         'Arc Fault Detection Tester'
+      ]
+    }
+  });
+});
+
+scenarioHvac?.addEventListener('click', () => {
+  runSimulatedScenario({
+    callerSpeech: "Our central air conditioner stopped cooling and is blowing lukewarm air. It is ninety degrees outside. Can someone come look at the compressor tomorrow morning? This is David Ramirez at 408 Whispering Pines.",
+    structured: {
+      customer_name: 'David Ramirez',
+      service_type: 'HVAC AC Compressor Diagnostic and Freon Inspection',
+      scheduled_time: 'Tomorrow at 9:00 AM',
+      address: '408 Whispering Pines',
+      urgency: 'urgent',
+      phone: '(555) 728-1934'
+    },
+    canvasData: {
+      equipment: 'Carrier 3.5 Ton Central AC Condenser',
+      diagnostic: 'Triage: Turn thermostat to OFF to prevent compressor seizure',
+      price: '$140 to $210 (Diagnostic and Capacitor Test)',
+      distance: 'Mike is 2.8 miles away'
+    },
+    lemurData: {
+      summary: 'David Ramirez reported central AC blowing warm air in 90F heat. Guided customer to shut off unit at thermostat to protect compressor motor. Locked dispatch slot for Tomorrow at 9:00 AM.',
+      sentiment: '82% Stress to 18% Calm',
+      parts: [
+        '45/5 Dual Round Run Capacitor',
+        'Digital Manifold Gauge and R-410A Refrigerant',
+        'Contactor Switch Replacement'
       ]
     }
   });

@@ -13,7 +13,7 @@
   </head>
   <body>
     <div class="app-frame">
-      <!-- Header -->
+        <!-- Header -->
       <header class="app-header">
         <a class="brand" href="./index.html" aria-label="HangON home">
           <img class="brand-logo" src="./hangon-logo.png" alt="HangON Logo">
@@ -28,11 +28,17 @@
           <a class="active" href="./live.html">Live Cockpit</a>
         </nav>
 
-        <div class="workspace-status-badge">
-          <span class="pulse-dot" aria-hidden="true"></span>
-          <div class="status-info">
-            <strong>Apex Plumbing and Electrical</strong>
-            <span class="status-caption">Voice Dispatch Ready</span>
+        <div class="header-right-group">
+          <button type="button" class="theme-toggle-btn" aria-label="Toggle theme">
+            <span class="theme-icon">Light</span>
+          </button>
+
+          <div class="workspace-status-badge">
+            <span class="pulse-dot" aria-hidden="true"></span>
+            <div class="status-info">
+              <strong>Apex Home Services</strong>
+              <span class="status-caption">Voice Dispatch Ready</span>
+            </div>
           </div>
         </div>
       </header>
@@ -55,9 +61,10 @@
         <section class="quick-preset-bar">
           <span class="preset-title">Test Scenarios:</span>
           <div class="scenario-buttons">
-            <button type="button" class="scenario-btn" id="scenarioWaterHeater">Water Heater Emergency</button>
-            <button type="button" class="scenario-btn" id="scenarioElectrical">Electrical Panel Sparking</button>
-            <button type="button" class="scenario-btn" id="scenarioDrain">Kitchen Drain Backup</button>
+            <button type="button" class="scenario-btn" id="scenarioWaterHeater">Plumbing: Water Heater Leak</button>
+            <button type="button" class="scenario-btn" id="scenarioElectrical">Electrical: Panel Sparking</button>
+            <button type="button" class="scenario-btn" id="scenarioHvac">HVAC: AC Blowing Warm Air</button>
+            <button type="button" class="scenario-btn" id="scenarioDrain">Plumbing: Drain Backup</button>
           </div>
         </section>
 
@@ -156,7 +163,12 @@
                 <span id="targetTechnician" hidden>Technician: Mike Miller</span>
               </div>
             </div>
+          </aside>
+        </section>
 
+        <!-- Flat Below Call Bar: Executed Action & Technical Brief -->
+        <section class="bottom-resolution-section" id="bottomResolutionSection">
+          <div class="bottom-resolution-grid">
             <!-- Confirmed Action Receipt -->
             <div class="action-receipt-card" id="actionReceipt" hidden>
               <div class="receipt-headline">
@@ -199,11 +211,12 @@
                 <ul class="checklist-items" id="lemurPartsList"></ul>
               </div>
             </div>
-          </aside>
+          </div>
         </section>
       </main>
     </div>
 
+    <script src="./theme-toggle.js"></script>
     <script src="./auth-ui.js"></script>
     <script src="./voice-ui.js"></script>
     <script src="./live.js"></script>
