@@ -113,24 +113,24 @@
             <div class="hud-box voice-canvas-card" id="voiceCanvasCard">
               <div class="hud-box-head">
                 <span class="hud-label">Live Diagnostics &amp; Pricing</span>
-                <span class="badge-tech badge-safe" id="canvasStatusBadge">Active</span>
+                <span class="badge-tech badge-safe" id="canvasStatusBadge">Standby</span>
               </div>
               <div class="canvas-grid">
                 <div class="canvas-field">
                   <span class="canvas-k">Equipment</span>
-                  <strong class="canvas-v" id="canvasEquipment">Residential Water Heater</strong>
+                  <strong class="canvas-v" id="canvasEquipment">Waiting for speech...</strong>
                 </div>
                 <div class="canvas-field">
                   <span class="canvas-k">Triage Guidance</span>
-                  <strong class="canvas-v text-warn" id="canvasDiagnostic">Turn main yellow valve clockwise</strong>
+                  <strong class="canvas-v text-warn" id="canvasDiagnostic">Awaiting symptoms...</strong>
                 </div>
                 <div class="canvas-field">
                   <span class="canvas-k">Flat-Rate Estimate</span>
-                  <strong class="canvas-v text-accent" id="canvasPrice">$180 to $240</strong>
+                  <strong class="canvas-v text-accent" id="canvasPrice">Calculated live</strong>
                 </div>
                 <div class="canvas-field">
                   <span class="canvas-k">Technician</span>
-                  <strong class="canvas-v" id="canvasProDistance">Mike Miller · 4.2 mi away</strong>
+                  <strong class="canvas-v" id="canvasProDistance">Mike Miller · On call</strong>
                 </div>
               </div>
             </div>
@@ -139,7 +139,7 @@
             <div class="hud-box">
               <div class="hud-box-head">
                 <span class="hud-label">Speech Resolution</span>
-                <span class="badge-tech" id="slotAvailabilityBadge">Verified</span>
+                <span class="badge-tech" id="slotAvailabilityBadge">Standby</span>
               </div>
               <div class="dictation-diff" id="dictationDiff">
                 <div class="diff-raw">
@@ -152,7 +152,7 @@
                 </div>
               </div>
               <div class="slot-info" id="slotInfo">
-                <strong id="targetSlot">Open Slot: Tomorrow at 10:30 AM</strong>
+                <strong id="targetSlot">Awaiting schedule request...</strong>
                 <span id="targetTechnician" hidden>Technician: Mike Miller</span>
               </div>
             </div>
@@ -168,7 +168,7 @@
               </div>
               <div class="sms-preview-box" id="smsPreview">
                 <span class="sms-badge">SMS Transmitted to Technician</span>
-                <p id="smsMessage">DISPATCH CONFIRMED: Sarah Miller | Water Heater Valve Repair | Friday 10:30 AM | 742 Evergreen Terrace</p>
+                <p id="smsMessage"></p>
               </div>
             </div>
 
@@ -181,26 +181,22 @@
               
               <div class="lemur-summary-block">
                 <span class="lemur-subhead">Technician Brief:</span>
-                <p id="lemurSummary">Sarah Miller has active leak pooling from bottom valve of water heater. Caller was guided to turn main shutoff. Job locked for Friday at 10:30 AM.</p>
+                <p id="lemurSummary"></p>
               </div>
 
               <div class="lemur-sentiment-bar">
                 <div class="sentiment-labels">
                   <span>Caller State:</span>
-                  <strong id="lemurSentimentScore">88% Stress to 12% Calm</strong>
+                  <strong id="lemurSentimentScore">100% Calm</strong>
                 </div>
                 <div class="sentiment-meter">
-                  <div class="sentiment-fill" style="width: 14%;"></div>
+                  <div class="sentiment-fill" style="width: 0%;"></div>
                 </div>
               </div>
 
               <div class="lemur-parts-checklist">
                 <span class="lemur-subhead">Required Equipment Checklist:</span>
-                <ul class="checklist-items" id="lemurPartsList">
-                  <li>3/4" Brass PEX Fitting and Pressure Relief Valve</li>
-                  <li>Replacement Thermocouple and Pilot Assembly</li>
-                  <li>Teflon Tape and Heavy-Duty Pipe Wrench</li>
-                </ul>
+                <ul class="checklist-items" id="lemurPartsList"></ul>
               </div>
             </div>
           </aside>

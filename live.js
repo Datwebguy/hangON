@@ -181,6 +181,18 @@ function setReady() {
   title.textContent = 'Ready to Listen';
   hint.textContent = 'Click Start Voice Call or select an evaluation preset.';
   updateVisualizer('idle');
+
+  if (canvasEquipment) canvasEquipment.textContent = 'Waiting for speech...';
+  if (canvasDiagnostic) canvasDiagnostic.textContent = 'Awaiting symptoms...';
+  if (canvasPrice) canvasPrice.textContent = 'Calculated live';
+  if (canvasProDistance) canvasProDistance.textContent = 'Mike Miller · On call';
+  if (canvasStatusBadge) canvasStatusBadge.textContent = 'Standby';
+  if (rawSpeechText) rawSpeechText.textContent = 'Waiting for caller utterance...';
+  if (cleanedSpeechText) cleanedSpeechText.textContent = 'Waiting for speech...';
+  if (targetSlot) targetSlot.textContent = 'Awaiting schedule request...';
+  if (slotAvailabilityBadge) slotAvailabilityBadge.textContent = 'Standby';
+  if (actionReceipt) actionReceipt.hidden = true;
+  if (lemurDossier) lemurDossier.hidden = true;
 }
 
 function finish(resetUi = true) {
