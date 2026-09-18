@@ -1,12 +1,9 @@
 {
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index.mjs"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/api/index.mjs"
+  "functions": {
+    "server.mjs": {
+      "includeFiles": "{*.html,*.css,*.js,*.png,data/*.json}"
     }
-  ]
+  }
 }
+
+
