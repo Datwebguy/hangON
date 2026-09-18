@@ -392,4 +392,8 @@ function startServer(candidate, attempt = 0) {
   server.listen(candidate, () => console.log('HangON running at http://localhost:' + candidate));
 }
 
-startServer(port);
+if (!process.env.VERCEL) {
+  startServer(port);
+}
+
+export default handle;
