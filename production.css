@@ -20,7 +20,7 @@
 .voice-setting select {
   background: transparent;
   border: none;
-  color: #fff;
+  color: var(--ink);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -29,7 +29,7 @@
 
 .voice-setting select option {
   background: var(--surface-card);
-  color: #fff;
+  color: var(--ink);
 }
 
 .voice-setting select:focus-visible {
