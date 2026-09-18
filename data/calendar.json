@@ -1,13 +1,13 @@
 [
   {
-    "id": "job-e5c9e2bf",
+    "id": "job-seed-1",
     "customer_name": "Sarah Miller",
     "phone": "(555) 301-4492",
-    "service_type": "Send appointment confirmation details for Emmanuel's kitchen plumbing service at 631 N Broad Street, scheduled for tomorrow at 3:30 PM, to princeabel2000 at gmail dot com.",
+    "service_type": "Water Heater Leak & Diagnostic",
     "urgency": "urgent",
     "scheduled_time": "Friday at 10:30 AM",
     "address": "742 Evergreen Terrace",
-    "job_notes": "Send appointment confirmation details for Emmanuel's kitchen plumbing service at 631 N Broad Street, scheduled for tomorrow at 3:30 PM, to princeabel2000 at gmail dot com.",
+    "job_notes": "Water heater pressure relief valve leak. Guided main valve shutoff.",
     "status": "confirmed",
     "record_changed": true,
     "dispatched_to": "Mike (Apex Owner / Pro)",
@@ -15,7 +15,7 @@
       "status": "sent",
       "recipient": "Mike (Apex Dispatch Phone)",
       "timestamp": "2026-09-18T16:29:39.784Z",
-      "message": "🚨 NEW JOB: Sarah Miller | Send appointment confirmation details for Emmanuel's kitchen plumbing service at 631 N Broad Street, scheduled for tomorrow at 3:30 PM, to princeabel2000 at gmail dot com. | Friday at 10:30 AM | 742 Evergreen Terrace | Urgency: URGENT"
+      "message": "DISPATCH CONFIRMED: Sarah Miller | Water Heater Leak & Diagnostic | Friday at 10:30 AM | 742 Evergreen Terrace | Urgency: URGENT"
     },
     "dictation_metadata": {
       "raw_speech": null,
@@ -26,40 +26,14 @@
     "created_at": "2026-09-18T16:29:39.784Z"
   },
   {
-    "id": "job-d5f394e2",
-    "customer_name": "Emmanuel",
-    "phone": "930-642-8890",
-    "service_type": "Kitchen plumbing repair",
-    "urgency": "standard",
-    "scheduled_time": "Tomorrow at 3:30 PM",
-    "address": "631 N Broad Street, Middletown, Delaware",
-    "job_notes": "Booked via HangON Voice Front Desk. AssemblyAI Dictation verified.",
-    "status": "confirmed",
-    "record_changed": true,
-    "dispatched_to": "Mike (Apex Owner / Pro)",
-    "sms_dispatch": {
-      "status": "sent",
-      "recipient": "Mike (Apex Dispatch Phone)",
-      "timestamp": "2026-09-18T16:28:25.568Z",
-      "message": "🚨 NEW JOB: Emmanuel | Kitchen plumbing repair | Tomorrow at 3:30 PM | 631 N Broad Street, Middletown, Delaware | Urgency: STANDARD"
-    },
-    "dictation_metadata": {
-      "raw_speech": null,
-      "cleaned_text": null,
-      "self_correction_resolved": true,
-      "model": "AssemblyAI Universal-3.5 Pro Dictation"
-    },
-    "created_at": "2026-09-18T16:28:25.568Z"
-  },
-  {
-    "id": "job-e5d2f919",
-    "customer_name": "Test Customer",
-    "phone": "(555) 301-4492",
-    "service_type": "Pipe Burst Emergency",
-    "urgency": "emergency",
-    "scheduled_time": "Tomorrow at 10:30 AM",
-    "address": "123 Main St",
-    "job_notes": "Booked via HangON Voice Front Desk. AssemblyAI Dictation verified.",
+    "id": "job-seed-2",
+    "customer_name": "David Ramirez",
+    "phone": "(555) 728-1934",
+    "service_type": "HVAC AC Compressor Diagnostic",
+    "urgency": "urgent",
+    "scheduled_time": "Tomorrow at 9:00 AM",
+    "address": "408 Whispering Pines",
+    "job_notes": "Central AC blowing warm air in 90F heat. Guided thermostat shutoff.",
     "status": "confirmed",
     "record_changed": true,
     "dispatched_to": "Mike (Apex Owner / Pro)",
@@ -67,7 +41,7 @@
       "status": "sent",
       "recipient": "Mike (Apex Dispatch Phone)",
       "timestamp": "2026-09-18T14:43:04.586Z",
-      "message": "🚨 NEW JOB: Test Customer | Pipe Burst Emergency | Tomorrow at 10:30 AM | 123 Main St | Urgency: EMERGENCY"
+      "message": "DISPATCH CONFIRMED: David Ramirez | HVAC AC Compressor Diagnostic | Tomorrow at 9:00 AM | 408 Whispering Pines | Urgency: URGENT"
     },
     "dictation_metadata": {
       "raw_speech": null,
@@ -78,20 +52,33 @@
     "created_at": "2026-09-18T14:43:04.586Z"
   },
   {
-    "id": "job-seed-1",
+    "id": "job-seed-3",
     "customer_name": "David Chen",
     "phone": "(555) 234-8901",
     "service_type": "Water Heater Thermocouple Replacement",
     "urgency": "high",
     "scheduled_time": "Today at 2:00 PM",
     "address": "88 Meadowbrook Rd",
-    "job_notes": "Water heater pilot light won’t stay lit. Pilot assembly diagnostic.",
+    "job_notes": "Water heater pilot light won't stay lit. Pilot assembly diagnostic.",
     "status": "in_progress",
     "dispatched_to": "Mike (Apex Owner / Pro)",
     "created_at": "2026-09-18T11:16:49.275Z"
   },
   {
-    "id": "job-seed-2",
+    "id": "job-seed-4",
+    "customer_name": "Marcus Vance",
+    "phone": "(555) 432-6789",
+    "service_type": "Kitchen Sink Drain Snaking",
+    "urgency": "urgent",
+    "scheduled_time": "Tomorrow at 1:30 PM",
+    "address": "19 Elm St",
+    "job_notes": "Kitchen sink backing up into dishwasher line. Advised not to run dishwasher.",
+    "status": "confirmed",
+    "dispatched_to": "Mike (Apex Owner / Pro)",
+    "created_at": "2026-09-18T08:16:49.275Z"
+  },
+  {
+    "id": "job-seed-5",
     "customer_name": "Elena Rostova",
     "phone": "(555) 789-1234",
     "service_type": "200-Amp Subpanel Inspection",
@@ -102,18 +89,5 @@
     "status": "confirmed",
     "dispatched_to": "Mike (Apex Owner / Pro)",
     "created_at": "2026-09-18T02:16:49.275Z"
-  },
-  {
-    "id": "job-seed-3",
-    "customer_name": "Marcus Vance",
-    "phone": "(555) 432-6789",
-    "service_type": "Kitchen Sink Main Line Snaking",
-    "urgency": "urgent",
-    "scheduled_time": "Tomorrow at 1:30 PM",
-    "address": "19 Elm St",
-    "job_notes": "Kitchen sink backing up into dishwasher line. Main P-trap checked.",
-    "status": "confirmed",
-    "dispatched_to": "Mike (Apex Owner / Pro)",
-    "created_at": "2026-09-18T08:16:49.275Z"
   }
 ]

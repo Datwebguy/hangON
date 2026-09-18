@@ -112,8 +112,26 @@ export function createCalendarStore(filePath = defaultCalendarPath) {
       if (!input || typeof input !== 'object') {
         throw new Error('Booking payload must be an object.');
       }
-      const customerName = (input.customer_name || input.name || 'Caller').trim();
-      const serviceType = (input.service_type || input.service || input.request_summary || 'General Service').trim();
+      let customerName = (input.customer_name || input.name || 'Caller').trim();
+      let rawService = (input.service_type || input.service || input.request_summary || 'General Service').trim();
+
+      // Clean bulky text or instructions out of service_type
+      let serviceType = rawService;
+      if (serviceType.length > 50) {
+        if (/plumb|drain|sink|pipe|leak|water heater/i.test(serviceType)) {
+          serviceType = 'Kitchen Plumbing & Pipe Inspection';
+        } else if (/electric|panel|breaker|spark|outlet/i.test(serviceType)) {
+          serviceType = 'Electrical Service & Diagnostic';
+        } else if (/hvac|air condition|ac|heat|cooling|thermostat/i.test(serviceType)) {
+          serviceType = 'HVAC System Diagnostic & Repair';
+        } else {
+          serviceType = serviceType.slice(0, 48) + '...';
+        }
+      }
+
+      // Redact/clean email or phone from service field if mistakenly passed
+      serviceType = serviceType.replace(/[\w.-]+@[\w.-]+\.\w+/g, '').replace(/at\s+[\w.-]+\s+dot\s+\w+/gi, '').trim();
+
       const scheduledTime = (input.scheduled_time || input.time || 'Next Open Slot (Tomorrow 10:30 AM)').trim();
       const address = (input.address || input.location || 'Address confirmed on file').trim();
       const phone = (input.phone || input.contact || '(555) 301-4492').trim();
