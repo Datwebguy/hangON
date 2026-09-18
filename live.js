@@ -606,13 +606,15 @@ async function runSimulatedScenario(scenario) {
 
   updateVisualizer('speaking');
   title.textContent = 'Verifying Schedule and Triage';
-  const confirmationSpeech = `I understand, that water leak needs immediate attention. First, look for the yellow oval valve near the base and turn it clockwise to stop active water flow. I checked Mike's dispatch schedule and ${structured.scheduled_time} is open. Our diagnostic and repair estimate is $180 to $240. I have your address as ${structured.address}. Shall I go ahead and lock that slot into Mike's calendar for you?`;
+  const triageTip = scenario.canvasData?.diagnostic || 'I am looking into this right away.';
+  const priceTip = scenario.canvasData?.price || 'Standard Rates apply';
+  const confirmationSpeech = `I understand, that ${structured.service_type} needs attention. First: ${triageTip}. I checked Mike's dispatch schedule and ${structured.scheduled_time} is open. Estimate: ${priceTip}. I have your address as ${structured.address}. Shall I lock that slot into Mike's calendar for you?`;
   addMessage('agent', confirmationSpeech);
   await new Promise((r) => setTimeout(r, 1800));
 
   updateVisualizer('listening');
   title.textContent = 'Caller Confirming';
-  addMessage('caller', 'Yes please, thank you for the shutoff guidance. Go ahead and lock it in.');
+  addMessage('caller', 'Yes please, thank you for the triage guidance. Go ahead and lock it in.');
   await new Promise((r) => setTimeout(r, 1200));
 
   updateVisualizer('speaking');

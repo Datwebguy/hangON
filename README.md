@@ -109,12 +109,13 @@ npm test
 
 ---
 
-## 🧪 Demo Modes &amp; Evaluation Options
+## Evaluation Modes &amp; Scenarios
 
-1. **Live Microphone Call**: Click **"Start Live Voice Call"** on `/live.html`, speak normally with corrections, and hear HangON respond and book.
-2. **1-Click Test Scenarios**: No microphone? On `/live.html`, click any of the 3 one-click scenarios:
-   * 💧 *Water Heater Leak (Thursday ➔ Friday 10:30 AM self-correction)*
-   * ⚡ *Sparking Breaker Panel (Emergency Urgent)*
-   * 🚿 *Main Drain Snaking (Tomorrow 1:30 PM)*
-   Watch the live transcript, Dictation HUD, and real-time calendar commit!
-3. **Dispatch Board**: Visit `/` to see today and tomorrow's booked jobs update in real time.
+1. **Live Microphone Call**: Click **"Start Live Voice Call"** on `/live.html`, speak naturally (even with hesitations or date self-corrections), and hear HangON respond and book the appointment.
+2. **One-Click Test Scenarios**: On `/live.html`, click any of the evaluation presets:
+   * **Plumbing**: *Water Heater Leak (Thursday to Friday 10:30 AM self-correction)*
+   * **Electrical**: *Sparking Breaker Panel (Emergency Urgent)*
+   * **HVAC**: *Central AC Blowing Warm Air in 90F Heat*
+   * **Plumbing**: *Kitchen Drain Backup &amp; Dishwasher Snaking*
+   Watch the real-time transcript, Dictation HUD, and immediate calendar commit.
+3. **Dispatch Board**: Visit `/` to see today and tomorrow's booked jobs update live, with Light / Dark theme toggle support.

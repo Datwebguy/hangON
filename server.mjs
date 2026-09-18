@@ -20,7 +20,7 @@ const port = Number(process.env.PORT || 4180);
 const workspacePath = path.join(root, 'data', 'workspace.json');
 const requestStore = createRequestStore(path.join(root, 'data', 'requests.json'), { getDeliveryConfig: getWebhookIntegration });
 const calendarStore = createCalendarStore(path.join(root, 'data', 'calendar.json'));
-const publicFiles = new Set(['index.html', 'live.html', 'styles.css', 'production.css', 'app.next.js', 'live.js', 'voice-ui.js', 'auth-ui.js', 'pcm-processor.js', 'hangon-logo.png']);
+const publicFiles = new Set(['index.html', 'live.html', 'styles.css', 'production.css', 'app.next.js', 'live.js', 'voice-ui.js', 'auth-ui.js', 'theme-toggle.js', 'pcm-processor.js', 'hangon-logo.png']);
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png' };
 const rateBuckets = new Map();
 
