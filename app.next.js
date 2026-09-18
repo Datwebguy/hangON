@@ -13,7 +13,7 @@ function renderAppointments(appointments) {
   if (!appointments || !appointments.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-row';
-    empty.textContent = 'No jobs booked yet. Start a call to book the first appointment!';
+    empty.textContent = 'No jobs booked yet. Start a call to book the first appointment.';
     appointmentsFeed.append(empty);
     return;
   }
@@ -22,74 +22,46 @@ function renderAppointments(appointments) {
     const row = document.createElement('article');
     row.className = 'appointment-row';
 
-    const avatarCol = document.createElement('div');
-    avatarCol.className = 'apt-avatar';
-    avatarCol.textContent = job.customer_name ? job.customer_name[0].toUpperCase() : 'C';
-
-    const infoCol = document.createElement('div');
-    infoCol.className = 'apt-info';
-
-    const titleRow = document.createElement('div');
-    titleRow.className = 'apt-title-row';
-
+    const primaryCol = document.createElement('div');
+    primaryCol.className = 'apt-primary-col';
     const customer = document.createElement('strong');
     customer.className = 'apt-customer';
     customer.textContent = job.customer_name;
-
-    const slotBadge = document.createElement('span');
-    slotBadge.className = 'badge-slot-time';
-    slotBadge.textContent = '📅 ' + (job.scheduled_time || 'Tomorrow');
-
-    const urgencyBadge = document.createElement('span');
-    const urgency = (job.urgency || 'standard').toLowerCase();
-    urgencyBadge.className = 'status-chip ' + (urgency === 'emergency' ? 'status-emergency' : urgency === 'high' || urgency === 'urgent' ? 'status-warn' : 'status-safe');
-    urgencyBadge.textContent = urgency.toUpperCase();
-
-    titleRow.append(customer, slotBadge, urgencyBadge);
-
-    const serviceDesc = document.createElement('p');
+    const serviceDesc = document.createElement('span');
     serviceDesc.className = 'apt-service';
     serviceDesc.textContent = job.service_type;
+    primaryCol.append(customer, serviceDesc);
 
-    const metaRow = document.createElement('div');
-    metaRow.className = 'apt-meta';
-
+    const secondaryCol = document.createElement('div');
+    secondaryCol.className = 'apt-secondary-col';
+    const time = document.createElement('strong');
+    time.className = 'apt-time';
+    time.textContent = job.scheduled_time || 'Tomorrow';
     const address = document.createElement('span');
-    address.textContent = '📍 ' + (job.address || 'Address confirmed');
+    address.className = 'apt-address';
+    address.textContent = job.address || 'Address confirmed';
+    secondaryCol.append(time, address);
 
-    const phone = document.createElement('span');
-    phone.textContent = '📞 ' + (job.phone || '(555) 301-4492');
+    const statusCol = document.createElement('div');
+    statusCol.className = 'apt-status-col';
+    const statusChip = document.createElement('span');
+    statusChip.className = 'status-chip status-safe';
+    statusChip.textContent = 'Confirmed';
+    statusCol.append(statusChip);
 
-    const dispatched = document.createElement('span');
-    dispatched.className = 'apt-dispatch-tag';
-    dispatched.textContent = '📲 SMS Dispatched to Mike';
-
-    metaRow.append(address, phone, dispatched);
-    infoCol.append(titleRow, serviceDesc, metaRow);
-
-    const actionCol = document.createElement('div');
-    actionCol.className = 'apt-action-col';
-
-    const committedTag = document.createElement('span');
-    committedTag.className = 'status-chip status-safe';
-    committedTag.textContent = '✓ Calendar Locked';
-
-    actionCol.append(committedTag);
-    row.append(avatarCol, infoCol, actionCol);
+    row.append(primaryCol, secondaryCol, statusCol);
     appointmentsFeed.append(row);
   });
 }
 
 async function loadDashboard() {
   try {
-    // Ensure demo or operator session silently
     const sessionRes = await fetch('/api/demo/session', { credentials: 'same-origin' }).catch(() => null);
     if (sessionRes && sessionRes.ok) {
       const sessionData = await sessionRes.json().catch(() => ({}));
       csrfToken = sessionData.data?.csrf || '';
     }
 
-    // Load workspace and calendar in parallel
     const [workspaceRes, calendarRes] = await Promise.all([
       fetch('/api/workspace', { credentials: 'same-origin' }),
       fetch('/api/calendar', { credentials: 'same-origin' })
@@ -120,7 +92,7 @@ async function loadDashboard() {
   } catch (err) {
     console.warn('Dashboard live load notice:', err.message);
     if (appointmentsFeed) {
-      appointmentsFeed.innerHTML = '<div class="empty-row">Demo dispatch board ready. Click "Start Live Call" to test the voice agent!</div>';
+      appointmentsFeed.innerHTML = '<div class="empty-row">Dispatch board ready. Click Start Live Call to test the voice agent.</div>';
     }
   }
 }

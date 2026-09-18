@@ -61,16 +61,16 @@ export function generateLeMURDossier(transcriptText, metadata = {}) {
     agitation_metrics: {
       initial_stress_percent: agitationStart,
       resolved_stress_percent: agitationEnd,
-      status: 'De-escalated by HangON Voice Front Desk',
-      summary: `${agitationStart}% Panic ➔ ${agitationEnd}% Reassured & Calm`
+      status: 'Resolved by HangON Voice Front Desk',
+      summary: `${agitationStart}% Stress to ${agitationEnd}% Calm`
     },
     parts_checklist: partsList,
     pricing: {
       estimated_range: estPrice,
-      rate_type: 'Standard Flat-Rate (No Hidden Fees)'
+      rate_type: 'Standard Rate (No Hidden Fees)'
     },
-    customer_sms: `Apex Plumbing & Electrical: Hi ${customerName}, your appointment for ${serviceType} is locked for ${scheduledTime} at ${address}. Mike Miller (Master Tech) will arrive with parts ready. Questions? Reply to this text.`,
-    pro_sms: `🚨 DISPATCH ALERT: ${customerName} | ${serviceType} | ${scheduledTime} | ${address} | Est: ${estPrice} | Urgent`,
+    customer_sms: `Apex Plumbing and Electrical: Hi ${customerName}, your appointment for ${serviceType} is locked for ${scheduledTime} at ${address}. Mike Miller will arrive with parts ready. Questions? Reply to this text.`,
+    pro_sms: `DISPATCH ALERT: ${customerName} | ${serviceType} | ${scheduledTime} | ${address} | Est: ${estPrice} | Urgent`,
     model: 'AssemblyAI LeMUR (Universal-3.5 Pro Analysis)'
   };
 }

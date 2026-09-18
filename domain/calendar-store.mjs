@@ -136,7 +136,7 @@ export function createCalendarStore(filePath = defaultCalendarPath) {
           status: 'sent',
           recipient: 'Mike (Apex Dispatch Phone)',
           timestamp: new Date().toISOString(),
-          message: `🚨 NEW JOB: ${customerName} | ${serviceType} | ${scheduledTime} | ${address} | Urgency: ${urgency.toUpperCase()}`
+          message: `DISPATCH CONFIRMED: ${customerName} | ${serviceType} | ${scheduledTime} | ${address} | Urgency: ${urgency.toUpperCase()}`
         },
         dictation_metadata: {
           raw_speech: input.raw_speech || null,

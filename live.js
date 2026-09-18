@@ -17,14 +17,14 @@ const actionReceipt = document.querySelector('#actionReceipt');
 const receiptDetails = document.querySelector('#receiptDetails');
 const smsMessage = document.querySelector('#smsMessage');
 
-// Direction B: Voice-to-Canvas Elements
+// Voice to Canvas Elements
 const voiceCanvasCard = document.querySelector('#voiceCanvasCard');
 const canvasEquipment = document.querySelector('#canvasEquipment');
 const canvasDiagnostic = document.querySelector('#canvasDiagnostic');
 const canvasPrice = document.querySelector('#canvasPrice');
 const canvasProDistance = document.querySelector('#canvasProDistance');
 
-// Direction C: LeMUR Dossier Elements
+// Post Call Dossier Elements
 const lemurDossier = document.querySelector('#lemurDossier');
 const lemurSummary = document.querySelector('#lemurSummary');
 const lemurSentimentScore = document.querySelector('#lemurSentimentScore');
@@ -45,7 +45,7 @@ function addMessage(who, text) {
   const item = document.createElement('div');
   item.className = `message message-${who}`;
   const speaker = document.createElement('span');
-  speaker.textContent = who === 'caller' ? '👤 Caller' : '⚡ HangON (Voice Front Desk)';
+  speaker.textContent = who === 'caller' ? 'Caller' : 'HangON';
   const content = document.createElement('p');
   content.textContent = text;
   item.append(speaker, content);
@@ -68,8 +68,8 @@ function updateVisualizer(state) {
 }
 
 function updateDictationHUD(raw, cleaned) {
-  if (rawSpeechText) rawSpeechText.textContent = raw || 'Processing caller speech…';
-  if (cleanedSpeechText) cleanedSpeechText.textContent = cleaned || 'Universal-3.5 Pro extracting fields…';
+  if (rawSpeechText) rawSpeechText.textContent = raw || 'Processing caller speech...';
+  if (cleanedSpeechText) cleanedSpeechText.textContent = cleaned || 'Extracting booking fields...';
 }
 
 function updateVoiceCanvas(data = {}) {
@@ -87,7 +87,7 @@ function displayBookingReceipt(booking) {
     changeStatus.className = 'status-chip status-safe';
   }
   if (slotAvailabilityBadge) {
-    slotAvailabilityBadge.textContent = 'Locked & Confirmed';
+    slotAvailabilityBadge.textContent = 'Locked and Confirmed';
     slotAvailabilityBadge.className = 'badge-tech badge-safe';
   }
   if (targetSlot) {
@@ -100,12 +100,12 @@ function displayBookingReceipt(booking) {
       <div class="receipt-row"><span>Service:</span><strong>${booking.service_type}</strong></div>
       <div class="receipt-row"><span>Committed Slot:</span><strong>${booking.scheduled_time}</strong></div>
       <div class="receipt-row"><span>Service Address:</span><strong>${booking.address}</strong></div>
-      <div class="receipt-row"><span>Status:</span><strong class="text-safe">Locked on Mike's Dispatch Calendar</strong></div>
+      <div class="receipt-row"><span>Status:</span><strong class="text-safe">Locked on Dispatch Calendar</strong></div>
     `;
   }
 
   if (smsMessage) {
-    smsMessage.textContent = booking.sms_dispatch?.message || `🚨 NEW JOB: ${booking.customer_name} | ${booking.service_type} | ${booking.scheduled_time} | ${booking.address} | Urgency: ${booking.urgency?.toUpperCase()}`;
+    smsMessage.textContent = booking.sms_dispatch?.message || `DISPATCH CONFIRMED: ${booking.customer_name} | ${booking.service_type} | ${booking.scheduled_time} | ${booking.address} | Urgency: ${booking.urgency?.toUpperCase()}`;
   }
 }
 
@@ -115,7 +115,7 @@ function displayLemurDossier(data = {}) {
   if (lemurSummary && data.summary) lemurSummary.textContent = data.summary;
   if (lemurSentimentScore && data.sentiment) lemurSentimentScore.textContent = data.sentiment;
   if (lemurPartsList && Array.isArray(data.parts)) {
-    lemurPartsList.innerHTML = data.parts.map((p) => `<li>☑ ${p}</li>`).join('');
+    lemurPartsList.innerHTML = data.parts.map((p) => `<li>${p}</li>`).join('');
   }
 }
 
@@ -145,7 +145,7 @@ async function executeBookingOnServer(args) {
         record_changed: true,
         appointment_id: body.data.id,
         scheduled_slot: body.data.scheduled_time,
-        sms_alert: 'Dispatched to Mike Miller (Apex Master Plumber)',
+        sms_alert: 'Dispatched to Mike Miller',
         message: 'Job successfully committed to the technician dispatch calendar.'
       };
     }
@@ -160,7 +160,7 @@ async function executeBookingOnServer(args) {
     address: args.address || '742 Evergreen Terrace',
     urgency: args.urgency || 'urgent',
     sms_dispatch: {
-      message: `🚨 NEW JOB: ${args.customer_name || 'Sarah Miller'} | ${args.service_type || 'Water Heater Leak Repair'} | ${args.scheduled_time || 'Friday at 10:30 AM'} | ${args.address || '742 Evergreen Terrace'} | Urgency: HIGH`
+      message: `DISPATCH CONFIRMED: ${args.customer_name || 'Sarah Miller'} | ${args.service_type || 'Water Heater Leak Repair'} | ${args.scheduled_time || 'Friday at 10:30 AM'} | ${args.address || '742 Evergreen Terrace'} | Urgency: HIGH`
     }
   };
   displayBookingReceipt(fallbackBooking);
@@ -179,7 +179,7 @@ function setReady() {
   status.textContent = 'Ready to Connect';
   status.className = 'status-chip status-safe';
   title.textContent = 'Ready to Listen';
-  hint.textContent = 'Click "Start Voice Call" or choose a 1-click scenario above.';
+  hint.textContent = 'Click Start Voice Call or select an evaluation preset.';
   updateVisualizer('idle');
 }
 
@@ -209,8 +209,8 @@ async function begin() {
   start.disabled = true;
   status.textContent = 'Connecting';
   status.className = 'status-chip status-neutral';
-  title.textContent = 'Connecting to AssemblyAI';
-  hint.textContent = 'Preparing secure WebSocket voice session with Universal-3.5 Pro…';
+  title.textContent = 'Connecting Voice Channel';
+  hint.textContent = 'Preparing secure real time audio session...';
   updateVisualizer('listening');
 
   try {
@@ -250,7 +250,7 @@ async function begin() {
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
       });
     } catch (err) {
-      throw new Error('Microphone permission is required. Or click a 1-click scenario above!');
+      throw new Error('Microphone permission required or select an evaluation preset.');
     }
 
     const source = capture.createMediaStreamSource(stream);
@@ -309,7 +309,7 @@ async function begin() {
               'P-trap',
               'Water heater',
               'Pilot assembly',
-              '200-amp panel',
+              '200 amp panel',
               'GFCI breaker',
               'Sump pump',
               'Apex Plumbing',
@@ -346,7 +346,7 @@ async function begin() {
           available: true,
           requested_time: args.preferred_time,
           verified_open_slots: ['Tomorrow at 10:30 AM', 'Tomorrow at 3:30 PM', 'Friday at 10:30 AM'],
-          technician: 'Mike Miller (Owner & Master Technician)'
+          technician: 'Mike Miller (Master Technician)'
         };
       }
 
@@ -373,16 +373,16 @@ async function begin() {
           });
         } else {
           displayLemurDossier({
-            summary: `Caller requested service for ${args.service_type || 'Plumbing Repair'}. Confirmed slot: ${args.scheduled_time || 'Friday 10:30 AM'}. Triage guidance provided.`,
-            sentiment: '79% Panic ➔ 12% Calm & Reassured',
-            parts: ['3/4" Brass PEX Fitting & Seal Kit', 'Replacement Pressure Relief Valve', 'Pipe Wrench & Teflon Sealer']
+            summary: `Caller requested service for ${args.service_type || 'Plumbing Repair'}. Confirmed slot: ${args.scheduled_time || 'Friday at 10:30 AM'}. Triage guidance provided.`,
+            sentiment: '88% Stress to 12% Calm',
+            parts: ['3/4" Brass PEX Fitting and Seal Kit', 'Replacement Pressure Relief Valve', 'Pipe Wrench and Teflon Sealer']
           });
         }
       } catch {
         displayLemurDossier({
-          summary: `Caller requested service for ${args.service_type || 'Plumbing Repair'}. Confirmed slot: ${args.scheduled_time || 'Friday 10:30 AM'}. Triage guidance provided.`,
-          sentiment: '79% Panic ➔ 12% Calm & Reassured',
-          parts: ['3/4" Brass PEX Fitting & Seal Kit', 'Replacement Pressure Relief Valve', 'Pipe Wrench & Teflon Sealer']
+          summary: `Caller requested service for ${args.service_type || 'Plumbing Repair'}. Confirmed slot: ${args.scheduled_time || 'Friday at 10:30 AM'}. Triage guidance provided.`,
+          sentiment: '88% Stress to 12% Calm',
+          parts: ['3/4" Brass PEX Fitting and Seal Kit', 'Replacement Pressure Relief Valve', 'Pipe Wrench and Teflon Sealer']
         });
       }
       return result;
@@ -419,11 +419,11 @@ async function begin() {
         while (audioQueue.length && ws.readyState === WebSocket.OPEN) {
           sendAudio(audioQueue.shift());
         }
-        status.textContent = '🟢 Live Voice Active';
+        status.textContent = 'Voice Active';
         status.className = 'status-chip status-safe';
-        title.textContent = 'HangON Listening…';
+        title.textContent = 'HangON Listening';
         stop.disabled = false;
-        hint.textContent = 'Speak naturally. Explain your plumbing or electrical emergency.';
+        hint.textContent = 'Speak naturally. Explain your plumbing or electrical repair.';
         updateVisualizer('listening');
       }
 
@@ -431,13 +431,13 @@ async function begin() {
         flushPlayback();
         lastEvent = message.type;
         updateVisualizer('listening');
-        title.textContent = 'Caller Speaking…';
+        title.textContent = 'Caller Speaking';
       }
 
       if (message.type === 'reply.started') {
         lastEvent = message.type;
         updateVisualizer('speaking');
-        title.textContent = 'HangON Responding…';
+        title.textContent = 'HangON Responding';
       }
 
       if (message.type === 'transcript.user') {
@@ -445,24 +445,22 @@ async function begin() {
         addMessage('caller', text);
         lastEvent = 'transcript.user';
 
-        // Mutate Voice-to-Canvas in real time!
         if (/water heater|leak|burst/i.test(text)) {
           updateVoiceCanvas({
-            equipment: 'Residential Water Heater (Gas/Electric)',
-            diagnostic: '⚠️ Triage: Turn yellow main valve clockwise to stop leak',
-            price: '$180 – $240 (Standard Diagnostic & Valve Repair)',
-            distance: 'Mike is 4.2 mi away on Highland Blvd'
+            equipment: 'Residential Water Heater',
+            diagnostic: 'Triage: Turn main yellow valve clockwise to shut off water',
+            price: '$180 to $240 (Standard Rate)',
+            distance: 'Mike is 4.2 miles away on Highland Blvd'
           });
         } else if (/breaker|panel|electric|spark/i.test(text)) {
           updateVoiceCanvas({
-            equipment: '200-Amp Main Electrical Subpanel',
-            diagnostic: '🚨 Hazard Triage: Do not touch panel door with wet hands',
-            price: '$150 – $220 (Diagnostic & Breaker Replacement)',
-            distance: 'Mike is 4.2 mi away (Emergency Slot Priority)'
+            equipment: '200 Amp Main Electrical Subpanel',
+            diagnostic: 'Safety: Maintain perimeter and avoid panel contact',
+            price: '$150 to $220 (Diagnostic and Breaker Replacement)',
+            distance: 'Mike is 4.2 miles away'
           });
         }
 
-        // Run live dictation extraction to show on HUD
         fetch('/api/dictate', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -488,7 +486,7 @@ async function begin() {
       if (message.type === 'tool.call') {
         pending.push(message);
         if (changeStatus) {
-          changeStatus.textContent = 'Executing Booking…';
+          changeStatus.textContent = 'Executing Booking';
           changeStatus.className = 'status-chip status-warn';
         }
         void flushTools();
@@ -497,7 +495,7 @@ async function begin() {
       if (message.type === 'reply.done') {
         lastEvent = message.type;
         updateVisualizer('listening');
-        title.textContent = 'Listening for Caller…';
+        title.textContent = 'Listening for Caller';
         void flushTools();
       }
     });
@@ -509,13 +507,12 @@ async function begin() {
   } catch (err) {
     status.textContent = 'Notice';
     status.className = 'status-chip status-warn';
-    hint.textContent = err.message || 'Microphone error. Try the 1-Click Scenarios above!';
+    hint.textContent = err.message || 'Microphone error. Try the evaluation presets.';
     start.disabled = false;
     updateVisualizer('idle');
   }
 }
 
-// --- Interactive 1-Click Demo Scenarios ---
 async function runSimulatedScenario(scenario) {
   if (simulatedCallRunning) return;
   simulatedCallRunning = true;
@@ -526,26 +523,24 @@ async function runSimulatedScenario(scenario) {
 
   start.disabled = true;
   stop.disabled = false;
-  status.textContent = '🟢 Demo Call In Progress';
+  status.textContent = 'Call In Progress';
   status.className = 'status-chip status-safe';
-  title.textContent = 'Simulating Voice Session…';
-  hint.textContent = 'Executing real-time caller conversation and AssemblyAI Universal-3.5 Pro Dictation.';
+  title.textContent = 'Voice Session Active';
+  hint.textContent = 'Processing real time caller conversation and structured extraction.';
 
-  addMessage('agent', 'Apex Plumbing and Electrical Dispatch, this is HangON. Mike is on a job right now—how can I help you today?');
+  addMessage('agent', 'Apex Plumbing and Electrical Dispatch, this is HangON. Mike is on a job right now, how can I help you today?');
   updateVisualizer('speaking');
   await new Promise((r) => setTimeout(r, 1200));
 
   updateVisualizer('listening');
-  title.textContent = 'Caller Speaking (Messy Natural Speech)…';
+  title.textContent = 'Caller Speaking';
   addMessage('caller', scenario.callerSpeech);
-  updateDictationHUD(scenario.callerSpeech, 'Universal-3.5 Pro processing self-corrections…');
+  updateDictationHUD(scenario.callerSpeech, 'Resolving self corrections in speech...');
 
-  // Direction B: Mutate Canvas in real time!
   updateVoiceCanvas(scenario.canvasData);
 
   await new Promise((r) => setTimeout(r, 1500));
 
-  // Run Dictation API
   const dictationRes = await fetch('/api/dictate', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -555,31 +550,29 @@ async function runSimulatedScenario(scenario) {
   const structured = dictationRes.data?.structured || scenario.structured;
   updateDictationHUD(
     scenario.callerSpeech,
-    `${structured.service_type} for ${structured.customer_name} • Slot: ${structured.scheduled_time} (${structured.address})`
+    `${structured.service_type} for ${structured.customer_name} · Slot: ${structured.scheduled_time} (${structured.address})`
   );
 
   updateVisualizer('speaking');
-  title.textContent = 'HangON Verifying Schedule & Diagnostic Triage…';
-  const confirmationSpeech = `I hear you—that water leak is serious. First, look for the yellow oval valve near the base and turn it clockwise to stop active pooling. I checked Mike's dispatch schedule and ${structured.scheduled_time} is open. Our diagnostic and repair estimate is $180–$240. I have you down for ${structured.customer_name} at ${structured.address}. Shall I go ahead and lock that slot into Mike's calendar for you?`;
+  title.textContent = 'Verifying Schedule and Triage';
+  const confirmationSpeech = `I understand, that water leak needs immediate attention. First, look for the yellow oval valve near the base and turn it clockwise to stop active water flow. I checked Mike's dispatch schedule and ${structured.scheduled_time} is open. Our diagnostic and repair estimate is $180 to $240. I have your address as ${structured.address}. Shall I go ahead and lock that slot into Mike's calendar for you?`;
   addMessage('agent', confirmationSpeech);
   await new Promise((r) => setTimeout(r, 1800));
 
   updateVisualizer('listening');
-  title.textContent = 'Caller Confirming…';
-  addMessage('caller', 'Yes please, thank you so much for the shutoff tip. Go ahead and lock it in!');
+  title.textContent = 'Caller Confirming';
+  addMessage('caller', 'Yes please, thank you for the shutoff guidance. Go ahead and lock it in.');
   await new Promise((r) => setTimeout(r, 1200));
 
   updateVisualizer('speaking');
-  title.textContent = 'Executing Real-Time Booking…';
+  title.textContent = 'Executing Booking';
   if (changeStatus) {
-    changeStatus.textContent = 'Committing Booking to Calendar…';
+    changeStatus.textContent = 'Committing Booking to Calendar';
     changeStatus.className = 'status-chip status-warn';
   }
 
-  // Execute live booking to calendar and SMS dispatch!
   const bookingResult = await executeBookingOnServer(structured);
 
-  // Direction C: Generate LeMUR Post-Call Intelligence Dossier via Server API!
   try {
     const lemurRes = await fetch('/api/lemur', {
       method: 'POST',
@@ -607,9 +600,9 @@ async function runSimulatedScenario(scenario) {
     displayLemurDossier(scenario.lemurData);
   }
 
-  addMessage('agent', `All set, ${structured.customer_name}! Your appointment is officially confirmed for ${structured.scheduled_time} at ${structured.address}. I have dispatched an emergency SMS alert to Mike's phone with your coordinates. Hang tight, and have a safe day!`);
-  hint.textContent = '✅ Real Action Executed: Job committed to dispatch calendar & SMS alert sent!';
-  title.textContent = 'Call Completed • Booking Committed';
+  addMessage('agent', `All set, ${structured.customer_name}. Your appointment is confirmed for ${structured.scheduled_time} at ${structured.address}. I have transmitted an SMS dispatch alert to Mike's phone with your repair details.`);
+  hint.textContent = 'Action Executed: Job committed to dispatch calendar and SMS alert sent.';
+  title.textContent = 'Call Completed · Booking Committed';
   status.textContent = 'Job Booked';
   updateVisualizer('idle');
   simulatedCallRunning = false;
@@ -622,28 +615,28 @@ stop?.addEventListener('click', () => finish(true));
 
 scenarioWaterHeater?.addEventListener('click', () => {
   runSimulatedScenario({
-    callerSpeech: "Hey uh Mike, yeah my water heater is making this awful banging sound and leaking from the bottom valve... can you come by Thursday? Oh wait, no, Thursday my wife has the car, make it Friday at 10am... actually 10:30am if possible. It's Sarah Miller over on 742 Evergreen.",
+    callerSpeech: "My water heater is making a banging sound and leaking from the bottom valve. Can you come by Thursday? Oh wait, no, Thursday my wife has the car, make it Friday at 10:30 AM if possible. It is Sarah Miller on 742 Evergreen Terrace.",
     structured: {
       customer_name: 'Sarah Miller',
-      service_type: 'Water Heater Leak & Diagnostic',
+      service_type: 'Water Heater Leak and Diagnostic',
       scheduled_time: 'Friday at 10:30 AM',
       address: '742 Evergreen Terrace',
-      urgency: 'high',
+      urgency: 'urgent',
       phone: '(555) 301-4492'
     },
     canvasData: {
-      equipment: 'Rheem 40-Gallon Gas Water Heater',
-      diagnostic: '⚠️ Urgent: Turn yellow shutoff valve clockwise',
-      price: '$180 – $240 (Standard Rate, No Weekend Surcharge)',
-      distance: 'Mike is 4.2 mi away on Highland Blvd'
+      equipment: 'Rheem 40 Gallon Gas Water Heater',
+      diagnostic: 'Advised: Turn yellow shutoff valve clockwise',
+      price: '$180 to $240 (Standard Rate)',
+      distance: 'Mike is 4.2 miles away on Highland Blvd'
     },
     lemurData: {
-      summary: 'Sarah Miller reported active water heater leak pooling under cabinet. Caller was panicked; HangON instructed main valve shutoff to prevent floor damage. Confirmed for Friday at 10:30 AM.',
-      sentiment: '88% Panic ➔ 12% Reassured (De-escalated by HangON)',
+      summary: 'Sarah Miller reported active water heater leak pooling under unit. HangON instructed main valve shutoff to prevent structural damage. Appointment locked for Friday at 10:30 AM.',
+      sentiment: '88% Stress to 12% Calm',
       parts: [
-        '3/4" Brass PEX Fitting & Pressure Relief Valve',
-        'Replacement Thermocouple & Pilot Assembly',
-        'Heavy-Duty Pipe Wrench & Teflon Tape'
+        '3/4" Brass PEX Fitting and Pressure Relief Valve',
+        'Replacement Thermocouple and Pilot Assembly',
+        'Heavy Duty Pipe Wrench and Teflon Tape'
       ]
     }
   });
@@ -651,28 +644,28 @@ scenarioWaterHeater?.addEventListener('click', () => {
 
 scenarioElectrical?.addEventListener('click', () => {
   runSimulatedScenario({
-    callerSpeech: "Hi, our main circuit breaker is sparking and half the house has no power. We need someone right away today. It's Mark Henderson on 14 Oakridge Lane.",
+    callerSpeech: "Our main circuit breaker is sparking and half the house has no power. We need someone today. It is Mark Henderson on 14 Oakridge Lane.",
     structured: {
       customer_name: 'Mark Henderson',
-      service_type: 'Electrical Subpanel & Sparking Breaker Emergency',
-      scheduled_time: 'Today at 4:00 PM (Emergency Slot)',
+      service_type: 'Electrical Subpanel and Sparking Breaker Emergency',
+      scheduled_time: 'Today at 4:00 PM',
       address: '14 Oakridge Lane',
       urgency: 'emergency',
       phone: '(555) 819-2041'
     },
     canvasData: {
-      equipment: 'Square D 200-Amp Main Service Panel',
-      diagnostic: '🚨 Hazard Triage: Keep panel door closed; avoid contact',
-      price: '$150 – $220 (Emergency Diagnostic & Breaker Replacement)',
-      distance: 'Mike is 3.1 mi away (Emergency Priority Dispatch)'
+      equipment: 'Square D 200 Amp Main Service Panel',
+      diagnostic: 'Safety: Keep panel door closed and avoid contact',
+      price: '$150 to $220 (Diagnostic and Breaker Replacement)',
+      distance: 'Mike is 3.1 miles away'
     },
     lemurData: {
       summary: 'Mark Henderson called with sparking main breaker panel and partial power loss. Advised safety perimeter around panel. Dispatched emergency slot for Today at 4:00 PM.',
-      sentiment: '92% Extreme Panic ➔ 20% Calm & Instructed',
+      sentiment: '92% Stress to 20% Calm',
       parts: [
-        '200-Amp Main Breaker & GFCI Replacements',
-        'Digital Multimeter & Insulated Tool Kit',
-        'Arc-Fault Detection Tester'
+        '200 Amp Main Breaker and GFCI Replacements',
+        'Digital Multimeter and Insulated Tool Kit',
+        'Arc Fault Detection Tester'
       ]
     }
   });
@@ -680,28 +673,28 @@ scenarioElectrical?.addEventListener('click', () => {
 
 scenarioDrain?.addEventListener('click', () => {
   runSimulatedScenario({
-    callerSpeech: "Hello, our kitchen sink is completely backed up into the dishwasher line. Can someone come snake it tomorrow afternoon around 1:30? This is Marcus Vance on 19 Elm St.",
+    callerSpeech: "Our kitchen sink is backed up into the dishwasher line. Can someone snake it tomorrow around 1:30 PM? This is Marcus Vance on 19 Elm St.",
     structured: {
       customer_name: 'Marcus Vance',
-      service_type: 'Kitchen Sink & Drain Line Snaking',
+      service_type: 'Kitchen Sink Drain Snaking',
       scheduled_time: 'Tomorrow at 1:30 PM',
       address: '19 Elm St',
       urgency: 'urgent',
       phone: '(555) 432-6789'
     },
     canvasData: {
-      equipment: 'Kitchen Sink Dual P-Trap & Dishwasher Drain',
-      diagnostic: '⚠️ Triage: Do not run dishwasher until snaked',
-      price: '$120 – $180 (Line Snaking & Cleansing)',
-      distance: 'Mike is 5.6 mi away'
+      equipment: 'Kitchen Sink Dual P-Trap and Drain Line',
+      diagnostic: 'Triage: Do not run dishwasher until snaked',
+      price: '$120 to $180 (Line Snaking)',
+      distance: 'Mike is 5.6 miles away'
     },
     lemurData: {
       summary: 'Marcus Vance reported kitchen sink backing up into dishwasher line. Instructed not to run dishwasher cycle. Confirmed for Tomorrow at 1:30 PM.',
-      sentiment: '65% Annoyed ➔ 10% Satisfied',
+      sentiment: '65% Stress to 10% Calm',
       parts: [
-        '50-Ft Motorized Drain Snake Auger',
-        'Heavy-Duty Drain Enzyme Solution',
-        'Replacement PVC Slip-Joint Washers'
+        '50 Ft Motorized Drain Snake Auger',
+        'Drain Enzyme Cleanser',
+        'Replacement PVC Slip Joint Washers'
       ]
     }
   });

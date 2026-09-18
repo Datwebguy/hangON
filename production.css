@@ -1,53 +1,47 @@
 .voice-setting {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  max-width: 440px;
-  margin-top: 18px;
-  padding: 10px 14px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
-  color: var(--ink-secondary);
-  font-size: 12px;
+  border: 1px solid var(--line);
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.voice-setting label {
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: .06em;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .voice-setting select {
-  min-width: 170px;
-  border: 1px solid var(--line-light);
-  border-radius: 8px;
-  background: var(--surface-raised);
+  background: transparent;
+  border: none;
   color: #fff;
-  padding: 6px 12px;
-  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
   cursor: pointer;
+  outline: none;
+}
+
+.voice-setting select option {
+  background: var(--surface-card);
+  color: #fff;
 }
 
 .voice-setting select:focus-visible {
-  outline: 2px solid var(--emerald);
+  outline: none;
 }
 
 .load-status {
   min-height: 20px;
-  margin: -16px 0 20px;
+  margin: -12px 0 16px;
   color: var(--ink-secondary);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .load-status-safe { color: var(--emerald); }
 .load-status-warn { color: var(--amber); }
-
-@media (max-width: 800px) {
-  .voice-setting {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .voice-setting select {
-    width: 100%;
-  }
-}
