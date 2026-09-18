@@ -11,7 +11,7 @@ if (!process.env.ASSEMBLYAI_API_KEY) {
   if (!fs.existsSync(keyFile)) throw new Error('AssemblyAI key file not found. Set ASSEMBLYAI_API_KEY or HANGON_KEY_FILE.');
   const raw = fs.readFileSync(keyFile, 'utf8');
   const candidates = raw.match(/[A-Za-z0-9_-]{20,}/g) ?? [];
-  if (candidates.length !== 1) throw new Error('Expected exactly one AssemblyAI key; found ' + candidates.length + '.');
+  if (!candidates.length) throw new Error('No AssemblyAI key found in ' + keyFile);
   process.env.ASSEMBLYAI_API_KEY = candidates[0];
 }
 

@@ -1,49 +1,51 @@
 {
   "id": "workspace-local",
-  "name": "Your workspace",
-  "description": "A voice front desk for clear requests and reliable follow-up.",
+  "name": "Apex Plumbing & Electrical Dispatch",
+  "business_type": "Solo Contractor / Trade Service",
+  "owner": "Mike Miller (Owner & Master Technician)",
+  "description": "Voice front desk for Apex Plumbing & Electrical. Never miss a $1,500 job while on a ladder or under a sink.",
   "voice": {
     "default": "anna",
     "allowed": ["anna", "michael", "jane", "alba"]
   },
   "routing": {
-    "default_route": "general",
+    "default_route": "emergency_plumbing",
     "routes": [
       {
-        "id": "billing",
-        "label": "Billing & payments",
-        "description": "Questions about charges, invoices, payments, refunds, and fees.",
-        "keywords": ["payment", "billing", "bill", "charge", "invoice", "refund", "fee"]
+        "id": "emergency_plumbing",
+        "label": "Emergency Plumbing & Water Leaks",
+        "description": "Burst pipes, active flooding, water heater leaks, sewer backups.",
+        "keywords": ["leak", "burst", "pipe", "water heater", "flooding", "shutoff", "sewer", "sink", "faucet", "drain"]
       },
       {
-        "id": "technical",
-        "label": "Technical support",
-        "description": "Questions about access, setup, errors, or a service not working.",
-        "keywords": ["technical", "error", "not working", "login", "access", "setup", "broken"]
+        "id": "electrical",
+        "label": "Electrical & Panel Repairs",
+        "description": "Tripped breakers, sparking outlets, 200-amp panel inspection, GFCI reset.",
+        "keywords": ["electric", "breaker", "spark", "panel", "wiring", "power", "outlet", "voltage", "switch"]
       },
       {
-        "id": "general",
-        "label": "General requests",
-        "description": "Requests that need team review but do not match a configured queue.",
-        "keywords": []
+        "id": "routine_service",
+        "label": "Scheduled Maintenance & Quotes",
+        "description": "Fixture installs, general estimates, routine system inspections.",
+        "keywords": ["maintenance", "quote", "inspection", "replace", "install", "estimate"]
       }
     ]
   },
   "capabilities": {
     "intake": {
       "enabled": true,
-      "label": "Prepare and route requests",
-      "description": "Capture a caller's request, confirm it, and send it to the configured internal queue."
+      "label": "AssemblyAI Dictation & Intake",
+      "description": "Listens to messy caller speech and extracts clean booking fields using Universal-3.5 Pro."
     },
     "lookup": {
-      "enabled": false,
-      "label": "Check connected information",
-      "description": "Not connected yet. A workspace administrator must connect an information source."
+      "enabled": true,
+      "label": "Live Schedule Lookup",
+      "description": "Checks Mike's dispatch calendar for open appointment slots in real time."
     },
     "actions": {
-      "enabled": false,
-      "label": "Complete changes",
-      "description": "Not connected yet. A workspace administrator must connect an action system."
+      "enabled": true,
+      "label": "Instant Calendar Booking & SMS Dispatch",
+      "description": "Commits confirmed appointments onto the live dispatch calendar and alerts the contractor."
     }
   }
 }

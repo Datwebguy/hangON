@@ -1,7 +1,53 @@
-.voice-setting{display:flex;align-items:center;justify-content:space-between;gap:18px;max-width:430px;margin-top:20px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 8px 22px rgba(25,55,44,.06)}
-.voice-setting select{min-width:170px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);padding:8px 28px 8px 10px;font:inherit;letter-spacing:0;text-transform:none}.voice-setting select:focus-visible{outline:3px solid #72b9a4;outline-offset:2px}
-.load-status{min-height:22px;margin:-24px 0 24px;color:var(--muted);font-size:13px}.load-status-safe{color:var(--accent)}.load-status-warn{color:var(--warn)}
-.capability-strip{margin:0 0 28px;padding:22px}.capability-strip__head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:14px}.capability-strip__head h2{margin:0;font-size:19px}.capability-strip__head p{margin:0;color:var(--muted);font-size:13px}.capability-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.capability-card{padding:14px;border:1px solid var(--line);border-radius:10px;background:#fbfcfb}.capability-card strong{display:block;font-size:14px}.capability-card span{display:block;margin-top:5px;color:var(--muted);font-size:12px;line-height:1.45}.capability-card--off{background:#f8f9f8}.capability-status{display:inline-block;margin-top:10px;color:var(--accent);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}.capability-card--off .capability-status{color:var(--warn)}
-.message-caller{align-self:flex-end;background:#e5f0eb}.message-caller span{color:var(--accent)}.message-agent{align-self:flex-start;background:#fff;border:1px solid var(--line)}.message-agent span{color:var(--muted)}
-@media(max-width:800px){.capability-grid{grid-template-columns:1fr}.voice-setting{align-items:flex-start;flex-direction:column;gap:8px}.voice-setting select{width:100%}}
-.integration-panel{margin:0 0 28px}.integration-panel__head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}.integration-panel__head h2{margin:7px 0 8px}.integration-panel__head p:not(.eyebrow){max-width:640px}.integration-form{display:grid;gap:12px;margin-top:20px;max-width:720px}.integration-form label{display:grid;gap:7px;color:var(--ink);font-size:12px;font-weight:700}.integration-form input{width:100%;min-height:42px;border:1px solid var(--line);border-radius:9px;padding:0 12px;background:#fbfcfb;color:var(--ink);font:inherit}.integration-form input:focus-visible{outline:3px solid #72b9a4;outline-offset:2px}.integration-secret-row{display:flex;gap:9px}.integration-secret-row input{flex:1}.integration-actions{display:flex;align-items:center;gap:10px;margin-top:5px}.integration-feedback{min-height:20px!important;font-size:12px!important}.call-status.status-neutral{background:#edf2ef;color:var(--muted)}.status-warn{background:var(--warn-soft);color:var(--warn)}@media(max-width:800px){.integration-panel__head{display:block}.integration-panel__head .status-chip{display:inline-flex;margin-top:16px}.integration-secret-row{display:grid}.integration-actions{align-items:stretch;flex-direction:column}.integration-actions .button{width:100%}}
+.voice-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  max-width: 440px;
+  margin-top: 18px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.voice-setting select {
+  min-width: 170px;
+  border: 1px solid var(--line-light);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  color: #fff;
+  padding: 6px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.voice-setting select:focus-visible {
+  outline: 2px solid var(--emerald);
+}
+
+.load-status {
+  min-height: 20px;
+  margin: -16px 0 20px;
+  color: var(--ink-secondary);
+  font-size: 13px;
+}
+
+.load-status-safe { color: var(--emerald); }
+.load-status-warn { color: var(--amber); }
+
+@media (max-width: 800px) {
+  .voice-setting {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .voice-setting select {
+    width: 100%;
+  }
+}

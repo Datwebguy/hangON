@@ -1,0 +1,41 @@
+[
+  {
+    "id": "job-seed-1",
+    "customer_name": "David Chen",
+    "phone": "(555) 234-8901",
+    "service_type": "Water Heater Thermocouple Replacement",
+    "urgency": "high",
+    "scheduled_time": "Today at 2:00 PM",
+    "address": "88 Meadowbrook Rd",
+    "job_notes": "Water heater pilot light won’t stay lit. Pilot assembly diagnostic.",
+    "status": "in_progress",
+    "dispatched_to": "Mike (Apex Owner / Pro)",
+    "created_at": "2026-09-18T11:16:49.275Z"
+  },
+  {
+    "id": "job-seed-2",
+    "customer_name": "Elena Rostova",
+    "phone": "(555) 789-1234",
+    "service_type": "200-Amp Subpanel Inspection",
+    "urgency": "standard",
+    "scheduled_time": "Tomorrow at 8:30 AM",
+    "address": "410 Highland Blvd",
+    "job_notes": "Flickering garage circuits and breaker reset test.",
+    "status": "confirmed",
+    "dispatched_to": "Mike (Apex Owner / Pro)",
+    "created_at": "2026-09-18T02:16:49.275Z"
+  },
+  {
+    "id": "job-seed-3",
+    "customer_name": "Marcus Vance",
+    "phone": "(555) 432-6789",
+    "service_type": "Kitchen Sink Main Line Snaking",
+    "urgency": "urgent",
+    "scheduled_time": "Tomorrow at 1:30 PM",
+    "address": "19 Elm St",
+    "job_notes": "Kitchen sink backing up into dishwasher line. Main P-trap checked.",
+    "status": "confirmed",
+    "dispatched_to": "Mike (Apex Owner / Pro)",
+    "created_at": "2026-09-18T08:16:49.275Z"
+  }
+]
