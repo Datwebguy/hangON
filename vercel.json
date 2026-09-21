@@ -1,12 +1,10 @@
 {
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api" }
-  ],
   "functions": {
     "api/index.mjs": {
       "includeFiles": "{server.mjs,*.html,*.css,*.js,*.png,data/*.json,domain/**}"
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api?pathname=/$1" }
+  ]
 }
-
-

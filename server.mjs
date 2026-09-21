@@ -392,12 +392,28 @@ async function api(req, res, url) {
   return error(res, 404, 'not_found', 'API route not found.');
 }
 
+function resolveRequestUrl(req) {
+  const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
+  const proto = req.headers['x-forwarded-proto'] || 'http';
+  const incoming = new URL(req.url || '/', proto + '://' + host);
+  const rewrittenPath = incoming.searchParams.get('pathname');
+  if (rewrittenPath) {
+    incoming.pathname = rewrittenPath.startsWith('/') ? rewrittenPath : '/' + rewrittenPath;
+    incoming.searchParams.delete('pathname');
+  }
+  // Vercel rewrite to "/api" can collapse "/api/..." → "/api"; recover original path.
+  if ((incoming.pathname === '/api' || incoming.pathname === '/api/') && req.headers['x-invoke-path']) {
+    incoming.pathname = String(req.headers['x-invoke-path']);
+  }
+  return incoming;
+}
+
 async function handle(req, res) {
   const id = crypto.randomUUID();
   res.setHeader('x-request-id', id);
-  const url = new URL(req.url, 'http://' + (req.headers.host || 'localhost'));
+  const url = resolveRequestUrl(req);
   try {
-    if (url.pathname.startsWith('/api/')) return await api(req, res, url);
+    if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return await api(req, res, url);
     if (!['GET', 'HEAD'].includes(req.method)) return error(res, 405, 'method_not_allowed', 'This resource is read-only.');
     const requested = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
     if (requested.includes('/') || !publicFiles.has(requested)) return error(res, 404, 'not_found', 'Resource not found.');
