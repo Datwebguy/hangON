@@ -38,7 +38,9 @@ export function buildSystemPrompt(workspace) {
       'Offer or confirm an open slot (e.g., Tomorrow at 10:30 AM or Friday at 10:00 AM).',
       'Once date and service are known, read back a quick 1-sentence confirmation and ask: "Shall I lock that into the calendar for you?"',
       'When the caller confirms, immediately call the book_service_appointment tool.',
-      'Once booked, state that the appointment is locked and an instant SMS dispatch alert was sent to the technician.'
+      'Once booked, say the appointment is locked and a text alert is ready for the technician.',
+      'If the caller gives an email address, call send_confirmation_email with that address after booking.',
+      'Do not invent an email address. Only send email when the caller provides one.'
     ].join(' ');
   }
 
@@ -97,5 +99,23 @@ export const checkAvailabilityTool = {
     properties: {
       preferred_time: { type: 'string', description: 'Preferred time mentioned by caller.' }
     }
+  }
+};
+
+export const sendConfirmationEmailTool = {
+  type: 'function',
+  name: 'send_confirmation_email',
+  description: 'Email the caller a clear booking confirmation after the appointment is locked. Only use an email address the caller provided.',
+  parameters: {
+    type: 'object',
+    properties: {
+      email: { type: 'string', description: 'Caller email address spoken or confirmed on the call.' },
+      customer_name: { type: 'string' },
+      service_type: { type: 'string' },
+      scheduled_time: { type: 'string' },
+      address: { type: 'string' },
+      phone: { type: 'string' }
+    },
+    required: ['email', 'customer_name', 'service_type', 'scheduled_time']
   }
 };

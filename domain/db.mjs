@@ -21,9 +21,12 @@ export function getSql() {
     sql = postgres(process.env.DATABASE_URL, {
       max: Number(process.env.DATABASE_POOL_MAX || 5),
       idle_timeout: 20,
-      connect_timeout: 10,
+      connect_timeout: 30,
       prepare: false,
-      onnotice: () => {}
+      onnotice: () => {},
+      connection: {
+        application_name: 'hangon'
+      }
     });
   }
   return sql;
@@ -34,6 +37,21 @@ export async function migrate() {
   if (migrated) return { skipped: false, already: true };
 
   const db = getSql();
+  await db`
+    CREATE TABLE IF NOT EXISTS schema_meta (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  const versionRows = await db`SELECT value FROM schema_meta WHERE key = 'version' LIMIT 1`;
+  const currentVersion = versionRows[0]?.value || '';
+  const TARGET = '2';
+  if (currentVersion === TARGET) {
+    migrated = true;
+    return { skipped: false, already: true };
+  }
+
   await db`
     CREATE TABLE IF NOT EXISTS workspaces (
       id TEXT PRIMARY KEY,
@@ -77,6 +95,11 @@ export async function migrate() {
   `;
 
   await seedDefaults(db);
+  await db`
+    INSERT INTO schema_meta (key, value, updated_at)
+    VALUES ('version', ${TARGET}, now())
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()
+  `;
   migrated = true;
   return { skipped: false, already: false };
 }

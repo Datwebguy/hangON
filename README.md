@@ -107,6 +107,8 @@ See `.env.example`:
 | --- | --- |
 | `ASSEMBLYAI_API_KEY` | Live voice sessions (server-side only) |
 | `DATABASE_URL` | Postgres connection (calendar, requests, integrations, workspaces) |
+| `RESEND_API_KEY` | Optional. Sends booking confirmation emails via Resend |
+| `HANGON_EMAIL_FROM` | Optional. Verified Resend from-address, e.g. `HangON <bookings@yourdomain.com>` |
 | `HANGON_SESSION_SECRET` | Signed session cookies |
 | `HANGON_CONFIRMATION_SECRET` | Confirmation binding |
 | `HANGON_OPERATOR_TOKEN` | Required in production for operator sign-in |

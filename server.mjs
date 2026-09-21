@@ -9,11 +9,12 @@ import { createPreparedRequest, requestProposal, sanitizeDetails, validateReques
 import { transcribeWithDictation, extractStructuredJob } from './domain/dictation.mjs';
 import { generateLeMURDossier } from './domain/lemur.mjs';
 import { configureWebhookIntegration, getPublicWebhookIntegration, getWebhookIntegration, removeWebhookIntegration } from './domain/integration-store.mjs';
-import { buildSystemPrompt, requestTool, bookServiceTool, checkAvailabilityTool, voiceConfig } from './domain/voice.mjs';
+import { buildSystemPrompt, requestTool, bookServiceTool, checkAvailabilityTool, sendConfirmationEmailTool, voiceConfig } from './domain/voice.mjs';
 import { createSession, hasConfiguredOperatorAccess, isProduction, readSession, sessionCookie, verifyOperatorToken } from './domain/security.mjs';
 import { createConfirmationToken, verifyConfirmationToken } from './domain/confirmation.mjs';
 import { readWorkspace } from './domain/db.mjs';
 import { getStores, initStores } from './domain/stores.mjs';
+import { isEmailConfigured, sendBookingEmail } from './domain/email.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4180);
@@ -139,12 +140,24 @@ async function fetchTimeout(url, options, ms = 10000) {
   }
 }
 
+let workspaceCache = { id: '', value: null, expiresAt: 0 };
+
+async function cachedWorkspace(workspaceId = 'workspace-local') {
+  const now = Date.now();
+  if (workspaceCache.value && workspaceCache.id === workspaceId && workspaceCache.expiresAt > now) {
+    return workspaceCache.value;
+  }
+  const value = await readWorkspace(workspaceId);
+  workspaceCache = { id: workspaceId, value, expiresAt: now + 60000 };
+  return value;
+}
+
 async function assemblyToken() {
   if (!process.env.ASSEMBLYAI_API_KEY) return null;
   const tokenUrl = new URL('https://agents.assemblyai.com/v1/token');
   tokenUrl.searchParams.set('expires_in_seconds', '300');
   tokenUrl.searchParams.set('max_session_duration_seconds', '600');
-  const response = await fetchTimeout(tokenUrl, { headers: { Authorization: `Bearer ${process.env.ASSEMBLYAI_API_KEY}` } });
+  const response = await fetchTimeout(tokenUrl, { headers: { Authorization: `Bearer ${process.env.ASSEMBLYAI_API_KEY}` } }, 8000);
   const body = await response.json().catch(() => ({}));
   if (!response.ok || typeof body.token !== 'string') {
     throw Object.assign(new Error('Voice token request failed.'), { statusCode: response.status >= 500 ? 502 : 503 });
@@ -165,7 +178,7 @@ async function api(req, res, url) {
   if (url.pathname === '/api/demo/session') {
     if (req.method !== 'GET') return error(res, 405, 'method_not_allowed', 'Use GET for a demo session.');
     if (!rateLimit(req, 'demo-session', 20)) return error(res, 429, 'demo_rate_limited', 'Too many demo sessions were requested.');
-    const workspace = await readWorkspace();
+    const workspace = await cachedWorkspace();
     const current = readSession(req);
     if (current?.role === 'demo' && current.workspace_id === workspace.id) {
       return sendJson(res, 200, { data: { workspace_id: current.workspace_id, role: current.role, csrf: current.csrf, demo: true } });
@@ -294,21 +307,49 @@ async function api(req, res, url) {
     if (!session) return;
     if (!process.env.ASSEMBLYAI_API_KEY) return error(res, 503, 'voice_not_configured', 'The voice service is not configured on the server.');
     try {
-      const workspace = await readWorkspace(session.workspace_id);
-      const token = await assemblyToken();
+      const [workspace, token] = await Promise.all([
+        cachedWorkspace(session.workspace_id),
+        assemblyToken()
+      ]);
       if (url.pathname === '/api/voice-token') return sendJson(res, 200, { token });
       return sendJson(res, 200, {
         data: {
           token,
           workspace: publicWorkspace(workspace),
           system_prompt: buildSystemPrompt(workspace),
-          tools: [bookServiceTool, checkAvailabilityTool, requestTool],
-          voice: voiceConfig(workspace)
+          tools: [bookServiceTool, checkAvailabilityTool, sendConfirmationEmailTool, requestTool],
+          voice: voiceConfig(workspace),
+          email_enabled: isEmailConfigured()
         }
       });
     } catch (e) {
-      return error(res, e.statusCode || 502, 'voice_upstream_error', 'The voice service could not be reached.');
+      return error(res, e.statusCode || 502, 'voice_upstream_error', e.message || 'The voice service could not be reached.');
     }
+  }
+
+  if (url.pathname === '/api/email/confirmation') {
+    if (req.method !== 'POST') return error(res, 405, 'method_not_allowed', 'Use POST to send a confirmation email.');
+    const session = sessionOrError(req, res, ['operator', 'demo']);
+    if (!session) return;
+    if (!csrfOrError(req, res, session)) return;
+    if (!rateLimit(req, 'email', 20)) return error(res, 429, 'email_rate_limited', 'Too many email requests.');
+    let input = {};
+    try { input = await readBody(req); } catch (e) { return error(res, e.statusCode || 400, 'invalid_json', e.message); }
+    const workspace = await cachedWorkspace(session.workspace_id);
+    const result = await sendBookingEmail({
+      to: input.email || input.to,
+      booking: {
+        customer_name: input.customer_name,
+        service_type: input.service_type,
+        scheduled_time: input.scheduled_time,
+        address: input.address,
+        phone: input.phone
+      },
+      businessName: workspace.name || 'Apex Home Services',
+      technicianName: workspace.owner || 'Mike'
+    });
+    if (!result.ok) return error(res, 400, 'email_failed', result.error || 'Could not send email.');
+    return sendJson(res, result.queued ? 202 : 200, { data: result });
   }
 
   if (url.pathname === '/api/requests/confirmation') {

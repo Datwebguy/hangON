@@ -274,10 +274,13 @@ function setReady() {
 }
 
 function finish(resetUi = true) {
+  clearTimeout(window.__hangonDictateTimer);
   if (session) {
     const current = session;
     session = null;
+    if (current.readyTimer) clearTimeout(current.readyTimer);
     if (current.ws && ![WebSocket.CLOSED, WebSocket.CLOSING].includes(current.ws.readyState)) {
+      try { current.ws.send(JSON.stringify({ type: 'session.end' })); } catch {}
       current.ws.close(1000, 'HangON ended the session');
     }
     current.stream?.getTracks().forEach((track) => track.stop());
@@ -387,26 +390,42 @@ async function begin() {
       sendAudio(event.data);
     };
 
+    let sessionReadyTimer = null;
+    const markReady = () => {
+      if (ready) return;
+      ready = true;
+      if (sessionReadyTimer) clearTimeout(sessionReadyTimer);
+      while (audioQueue.length && ws.readyState === WebSocket.OPEN) {
+        sendAudio(audioQueue.shift());
+      }
+      status.textContent = 'On the line';
+      status.className = 'status-chip status-safe';
+      title.textContent = 'Listening';
+      stop.disabled = false;
+      hint.textContent = 'Speak naturally about the repair you need.';
+      updateVisualizer('listening');
+    };
+
     ws.addEventListener('open', () => {
       ws.send(JSON.stringify({
         type: 'session.update',
         session: {
           system_prompt: config.system_prompt,
+          greeting: 'Apex Home Services, this is HangON. Mike is on a job — how can I help?',
           input: {
             format: { encoding: 'audio/pcm' },
-            transcription_mode: 'max_accuracy',
+            // Fast turn-taking for live calls (AssemblyAI: balanced | min_latency | max_accuracy).
+            transcription_mode: 'min_latency',
             keyterms: [
               'P-trap',
               'Water heater',
-              'Pilot assembly',
-              '200 amp panel',
               'GFCI breaker',
               'Sump pump',
-              'Apex Plumbing',
-              'Sarah Miller',
-              '742 Evergreen Terrace'
+              'Apex Plumbing'
             ],
-            turn_detection: { interrupt_response: true }
+            turn_detection: {
+              interrupt_response: true
+            }
           },
           output: {
             voice: voice?.getVoice() || config.voice.defaultVoice,
@@ -415,6 +434,10 @@ async function begin() {
           tools: config.tools
         }
       }));
+      // If session.ready is delayed, still open the mic path so the call doesn't stall.
+      sessionReadyTimer = setTimeout(() => {
+        if (!ready && ws.readyState === WebSocket.OPEN) markReady();
+      }, 2500);
     });
 
     const sendToolResult = (call, result) => {
@@ -435,6 +458,36 @@ async function begin() {
         return checkAvailabilityOnServer(args.preferred_time || '');
       }
 
+      if (toolName === 'send_confirmation_email') {
+        try {
+          await ensureDemoSession();
+          const emailRes = await fetch('/api/email/confirmation', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: apiHeaders(),
+            body: JSON.stringify({
+              email: args.email,
+              customer_name: args.customer_name,
+              service_type: args.service_type,
+              scheduled_time: args.scheduled_time,
+              address: args.address,
+              phone: args.phone
+            })
+          });
+          const emailBody = await emailRes.json().catch(() => ({}));
+          if (!emailRes.ok) {
+            return { status: 'failed', message: emailBody.error?.message || 'Could not send the confirmation email.' };
+          }
+          return {
+            status: emailBody.data?.queued ? 'queued' : 'sent',
+            message: emailBody.data?.message || 'Confirmation email handled.',
+            subject: emailBody.data?.subject || null
+          };
+        } catch (emailError) {
+          return { status: 'failed', message: emailError.message || 'Email request failed.' };
+        }
+      }
+
       let result;
       try {
         result = await executeBookingOnServer(args);
@@ -445,42 +498,35 @@ async function begin() {
           message: bookingError.message || 'Booking could not be saved.'
         };
       }
-      try {
-        await ensureDemoSession();
-        const lemurRes = await fetch('/api/lemur', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: apiHeaders(),
-          body: JSON.stringify({
-            transcript: args.request_summary || args.service_type || 'Water heater repair',
-            metadata: {
-              customer_name: args.customer_name || 'Customer',
-              service_type: args.service_type || 'Plumbing Service',
-              scheduled_time: args.scheduled_time || 'Next Open Slot',
-              address: args.address || 'Address on file'
-            }
-          })
-        }).then((r) => r.json());
-        if (lemurRes?.data) {
-          displayLemurDossier({
-            summary: lemurRes.data.pro_brief,
-            sentiment: lemurRes.data.agitation_metrics?.summary,
-            parts: lemurRes.data.parts_checklist
-          });
-        } else {
-          displayLemurDossier({
-            summary: `Caller requested service for ${args.service_type || 'Plumbing Repair'}. Confirmed slot: ${args.scheduled_time || 'Friday at 10:30 AM'}. Triage guidance provided.`,
-            sentiment: '88% Stress to 12% Calm',
-            parts: ['3/4" Brass PEX Fitting and Seal Kit', 'Replacement Pressure Relief Valve', 'Pipe Wrench and Teflon Sealer']
-          });
+      // Never block the spoken reply on dossier generation.
+      void (async () => {
+        try {
+          await ensureDemoSession();
+          const lemurRes = await fetch('/api/lemur', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: apiHeaders(),
+            body: JSON.stringify({
+              transcript: args.request_summary || args.service_type || 'Water heater repair',
+              metadata: {
+                customer_name: args.customer_name || 'Customer',
+                service_type: args.service_type || 'Plumbing Service',
+                scheduled_time: args.scheduled_time || 'Next Open Slot',
+                address: args.address || 'Address on file'
+              }
+            })
+          }).then((r) => r.json());
+          if (lemurRes?.data) {
+            displayLemurDossier({
+              summary: lemurRes.data.pro_brief,
+              sentiment: lemurRes.data.agitation_metrics?.summary,
+              parts: lemurRes.data.parts_checklist
+            });
+          }
+        } catch {
+          // Dossier is optional UI enrichment.
         }
-      } catch {
-        displayLemurDossier({
-          summary: `Caller requested service for ${args.service_type || 'Plumbing Repair'}. Confirmed slot: ${args.scheduled_time || 'Friday at 10:30 AM'}. Triage guidance provided.`,
-          sentiment: '88% Stress to 12% Calm',
-          parts: ['3/4" Brass PEX Fitting and Seal Kit', 'Replacement Pressure Relief Valve', 'Pipe Wrench and Teflon Sealer']
-        });
-      }
+      })();
       return result;
     };
 
@@ -509,18 +555,16 @@ async function begin() {
       let message;
       try { message = JSON.parse(event.data); } catch { return; }
 
-      if (message.type === 'session.ready') {
-        lastEvent = 'session.ready';
-        ready = true;
-        while (audioQueue.length && ws.readyState === WebSocket.OPEN) {
-          sendAudio(audioQueue.shift());
-        }
-        status.textContent = 'On the line';
-        status.className = 'status-chip status-safe';
-        title.textContent = 'Listening';
-        stop.disabled = false;
-        hint.textContent = 'Speak naturally about the repair you need.';
-        updateVisualizer('listening');
+      if (message.type === 'session.ready' || message.type === 'session.updated') {
+        lastEvent = message.type;
+        markReady();
+      }
+
+      if (message.type === 'error' || message.type === 'session.error') {
+        status.textContent = 'Needs attention';
+        status.className = 'status-chip status-warn';
+        hint.textContent = message.error || message.message || 'The voice line hit an error. Try starting the call again.';
+        updateVisualizer('idle');
       }
 
       if (message.type === 'input.speech.started') {
@@ -557,21 +601,25 @@ async function begin() {
           });
         }
 
-        ensureDemoSession().then(() => fetch('/api/dictate', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: apiHeaders(),
-          body: JSON.stringify({ utterance: text })
-        }))
-          .then((r) => r.json())
-          .then((data) => {
-            if (data.data?.structured) {
-              const s = data.data.structured;
-              updateDictationHUD(text, `${s.service_type} for ${s.customer_name} on ${s.scheduled_time} (${s.address})`);
-              if (targetSlot) targetSlot.textContent = `Suggested time: ${s.scheduled_time}`;
-            }
-          })
-          .catch(() => {});
+        // Debounce HUD extraction so every partial transcript doesn't hit the server.
+        clearTimeout(window.__hangonDictateTimer);
+        window.__hangonDictateTimer = setTimeout(() => {
+          ensureDemoSession().then(() => fetch('/api/dictate', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: apiHeaders(),
+            body: JSON.stringify({ utterance: text })
+          }))
+            .then((r) => r.json())
+            .then((data) => {
+              if (data.data?.structured) {
+                const s = data.data.structured;
+                updateDictationHUD(text, `${s.service_type} for ${s.customer_name} on ${s.scheduled_time} (${s.address})`);
+                if (targetSlot) targetSlot.textContent = `Suggested time: ${s.scheduled_time}`;
+              }
+            })
+            .catch(() => {});
+        }, 450);
       }
 
       if (message.type === 'transcript.agent') {
@@ -611,7 +659,7 @@ async function begin() {
     ws.addEventListener('close', () => finish(false));
     ws.addEventListener('error', () => finish(false));
 
-    session = { ws, stream, capture, playback };
+    session = { ws, stream, capture, playback, readyTimer: sessionReadyTimer };
   } catch (err) {
     status.textContent = 'Needs attention';
     status.className = 'status-chip status-warn';
