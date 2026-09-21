@@ -4,10 +4,10 @@
 
 # HangON
 
-### Autonomous Voice Front Desk for Solo Contractors &amp; Service Trades
-**"Never lose a $1,500 job while you're under a sink."**
+### Voice front desk for solo contractors &amp; service trades
+**Never lose a job while your hands are full.**
 
-Built with **AssemblyAI Voice Agent API** + **Universal-3.5 Pro Dictation API**
+Built on **AssemblyAI Voice Agent API** with structured speech cleanup for messy caller corrections.
 
 <p>
   <a href="https://tryhangon.vercel.app"><img src="https://img.shields.io/badge/Live%20Demo-tryhangon.vercel.app-10b981?style=for-the-badge" alt="Try the live demo"></a>
@@ -15,107 +15,127 @@ Built with **AssemblyAI Voice Agent API** + **Universal-3.5 Pro Dictation API**
   <a href="https://lablab.ai/ai-hackathons/assemblyai-voice-agent-hackathon"><img src="https://img.shields.io/badge/Hackathon-AssemblyAI%20Voice%20Agent-3b82f6?style=for-the-badge" alt="AssemblyAI Hackathon"></a>
 </p>
 
-<p>
-  <img src="https://img.shields.io/badge/AssemblyAI-Voice%20Agent%20API-3b82f6?style=flat-square" alt="AssemblyAI Voice Agent API">
-  <img src="https://img.shields.io/badge/AssemblyAI-Dictation%20API%20(Universal--3.5%20Pro)-10b981?style=flat-square" alt="Universal-3.5 Pro Dictation">
-  <img src="https://img.shields.io/badge/Node.js-20%2B-0f766e?style=flat-square&logo=node.js&logoColor=white" alt="Node.js 20 or newer">
-  <img src="https://img.shields.io/badge/Status-100%25%20Live%20Action%20Executed-10b981?style=flat-square" alt="Live Action Executed">
-</p>
-
 </div>
 
 ---
 
-## 🎯 The Pivot &amp; Problem
+## What it does
 
-Solo trade professionals (plumbers, electricians, HVAC pros, independent contractors) lose thousands of dollars every week simply because they are working with both hands full:
-* They're under a customer's sink, on a 12-foot ladder, or covered in grease.
-* When a homeowner calls with an emergency pipe burst or tripping breaker box, the pro can't pick up.
-* That caller won't leave a voicemail—they hang up and call the next contractor on Google.
+Solo plumbers, electricians, and HVAC pros miss emergency calls while they are under a sink or on a ladder. HangON answers, confirms the job, and books the visit on the technician schedule in the same call.
 
-**HangON is an autonomous voice front desk that answers the phone and actually books the job on the contractor's dispatch calendar in that same call.**
+**Caller flow**
 
----
-
-## 🧠 AssemblyAI Technical Depth: Voice Agent + Dictation API
-
-HangON showcases depth across AssemblyAI's newest voice technologies:
-
-### 1. Voice Agent API (WebSocket Real-Time Conversation)
-* Low-latency bidirectional 24kHz PCM audio streaming.
-* Natural turn detection with smart interruption handling (barge-in).
-* Dynamic function calling (`book_service_appointment`, `check_calendar_availability`).
-
-### 2. Universal-3.5 Pro Dictation API (`dictation.assemblyai.com/v1/transcribe/live`)
-* **Resolves Spoken Self-Corrections**: When callers hesitate or change their mind (*“Can you come Thursday? Wait no, Thursday my wife has the car, make it Friday at 10:30am”* ➔ resolves cleanly to **Friday at 10:30 AM**).
-* **Keyterms Prompting (`keyterms_prompt`)**: Biases speech recognition toward domain trade jargon, equipment, and local street names (`P-trap`, `Main shutoff valve`, `Water heater`, `200-amp panel`, `GFCI breaker`, `Sump pump`, `742 Evergreen Terrace`).
-* **Domain Context (`stt_prompt`)**: Steers the ASR model with solo contractor emergency service context.
-* **Structured Output (`llm_instruction`)**: Extracts clean JSON booking fields (`customer_name`, `service_type`, `urgency`, `scheduled_time`, `address`) directly.
-* **Dual Output Presentation**: Returns and displays the verbatim transcript alongside the cleaned rewrite so judges can see the self-correction resolution in real time.
-
-### 3. Live Autonomous Action Execution (No Placeholder Gating!)
-* Instead of passively storing a note for someone to read later, HangON checks the contractor's real schedule, confirms the details, and **locks the appointment onto the dispatch calendar**.
-* Immediately triggers a simulated SMS dispatch alert to the pro:
-  > `🚨 NEW EMERGENCY DISPATCH: Sarah Miller | Water Heater Leak Repair | Friday 10:30 AM | 742 Evergreen Terrace | Urgency: HIGH`
-
-### 4. Active Diagnostic Triage & Live Price Estimates (Direction A)
-* Diagnoses caller emergencies in real time (e.g. instructing a caller to turn the yellow main shutoff valve clockwise during a water heater leak to prevent catastrophic flooding before the tech arrives).
-* Quotes transparent, flat-rate pricing upfront ($180–$240 standard diagnostic & valve repair).
-
-### 5. Multimodal Voice-to-Canvas Live Sync (Direction B)
-* As the caller speaks, the cockpit UI mutates in real time:
-  * **Detected Equipment**: *Rheem 40-Gallon Gas Water Heater*
-  * **Diagnostic Triage**: *⚠️ Turn yellow shutoff valve clockwise*
-  * **Live Price Estimate**: *$180 – $240 (No Weekend Surcharge)*
-  * **Pro Distance & ETA**: *Mike is 4.2 mi away on Highland Blvd*
-
-### 6. AssemblyAI LeMUR Post-Call Intelligence Dossier (Direction C)
-* Instantly generates an executive pro brief for the contractor:
-  * **5-Second Pro Brief**: Everything Mike needs to know before stepping on the porch.
-  * **Agitation De-escalation Metric**: Tracks caller stress reduction (e.g., *88% Panic ➔ 12% Reassured*).
-  * **Truck Pre-Load Parts Checklist**: Automated bill of materials (brass PEX fittings, relief valves, pipe wrench) so Mike never arrives without the right parts.
+1. **Talk** — HangON picks up and listens.
+2. **Confirm** — Reads back the job, time, and address.
+3. **Book** — Saves the appointment and prepares a text for the technician.
 
 ---
 
-## ⚡ Interactive Before &amp; After
+## AssemblyAI features used
 
-| Stage | Raw Caller Speech | AssemblyAI Dictation (Universal-3.5 Pro) | Executed Result |
-| :--- | :--- | :--- | :--- |
-| **Input** | *"Hey uh Mike, yeah my water heater is making this awful banging sound and leaking from the bottom valve... can you come by Thursday? Wait no, make it Friday at 10:30am. It's Sarah Miller over on 742 Evergreen."* | **Filler stripped &amp; self-correction resolved.** Extracted: Sarah Miller, Water Heater Leak, Friday 10:30 AM, 742 Evergreen Terrace. | **Spoken Confirmation Read-Back:** *"Got it, Sarah. I have you down for Friday at 10:30 AM at 742 Evergreen Terrace. Shall I lock that into Mike's calendar?"* |
-| **Action** | Caller says: *"Yes please, book it!"* | Voice Agent invokes `book_service_appointment` tool. | **✅ Slot Locked on Dispatch Calendar** + **📲 SMS Dispatched to Mike** |
+### Voice Agent API (primary path)
+- Real-time two-way voice over WebSocket
+- Turn-taking with barge-in
+- Tool calling to check availability and book jobs
+
+### Speech understanding for messy callers
+- Keyterms for trade language (`P-trap`, `GFCI breaker`, street names)
+- Self-correction handling (“Thursday… wait, Friday at 10:30”)
+- Side-by-side “caller said” vs “booking summary” in the UI
+
+### After the call
+- Short technician brief, caller-mood summary, and parts checklist built from the call context
 
 ---
 
-## 🚀 Quick Start (Local Run)
+## Quick start
 
 ```bash
-# 1. Install dependencies
 npm install
 
-# 2. Configure AssemblyAI API Key
-# Add to .env or export in terminal:
-export ASSEMBLYAI_API_KEY="your_api_key_here"
-
-# 3. Start server
-npm start
-# Server runs at http://localhost:4180
+# Copy env template and fill in secrets
+cp .env.example .env
+# ASSEMBLYAI_API_KEY=...
+# DATABASE_URL=postgres://hangon:hangon@localhost:5432/hangon   # recommended
 ```
 
-### Running Tests
+### Postgres (recommended)
+
+```bash
+# Start local Postgres (Docker Desktop must be running)
+npm run db:up
+npm run db:migrate
+
+# Then start the app with DATABASE_URL set in .env or the shell
+npm start
+```
+
+Without `DATABASE_URL`, HangON falls back to the local JSON file store (fine for unit tests). With `DATABASE_URL`, bookings/requests/integrations are multi-tenant ready in Postgres.
+
+Optional local launcher (key file must stay outside the repo):
+
+```bash
+# PowerShell
+$env:HANGON_KEY_FILE="C:\path\to\local-key-file.txt"
+$env:DATABASE_URL="postgres://hangon:hangon@localhost:5432/hangon"
+node start-with-key.mjs
+```
+
+### Tests
+
 ```bash
 npm test
-# 11/11 unit & integration tests passing (calendar dispatch, dictation self-corrections, LeMUR dossier, auth, idempotency)
+# Postgres calendar tests run automatically when DATABASE_URL is set
 ```
 
 ---
 
-## Evaluation Modes &amp; Scenarios
+## Demo paths for judges
 
-1. **Live Microphone Call**: Click **"Start Live Voice Call"** on `/live.html`, speak naturally (even with hesitations or date self-corrections), and hear HangON respond and book the appointment.
-2. **One-Click Test Scenarios**: On `/live.html`, click any of the evaluation presets:
-   * **Plumbing**: *Water Heater Leak (Thursday to Friday 10:30 AM self-correction)*
-   * **Electrical**: *Sparking Breaker Panel (Emergency Urgent)*
-   * **HVAC**: *Central AC Blowing Warm Air in 90F Heat*
-   * **Plumbing**: *Kitchen Drain Backup &amp; Dishwasher Snaking*
-   Watch the real-time transcript, Dictation HUD, and immediate calendar commit.
-3. **Dispatch Board**: Visit `/` to see today and tomorrow's booked jobs update live, with Light / Dark theme toggle support.
+1. Open **[tryhangon.vercel.app/live.html](https://tryhangon.vercel.app/live.html)**
+2. Click **Start call** and speak, **or** click a sample call (water heater / panel / AC / drain)
+3. Watch HangON confirm details, book the job, and show Mike’s brief
+4. Open **Today's jobs** to see the schedule update
+
+---
+
+## Environment variables
+
+See `.env.example`:
+
+| Variable | Purpose |
+| --- | --- |
+| `ASSEMBLYAI_API_KEY` | Live voice sessions (server-side only) |
+| `DATABASE_URL` | Postgres connection (calendar, requests, integrations, workspaces) |
+| `HANGON_SESSION_SECRET` | Signed session cookies |
+| `HANGON_CONFIRMATION_SECRET` | Confirmation binding |
+| `HANGON_OPERATOR_TOKEN` | Required in production for operator sign-in |
+| `HANGON_INTEGRATION_ENCRYPTION_KEY` | Encrypts webhook secrets at rest |
+| `PORT` | Default `4180` |
+
+Browser code never receives the AssemblyAI API key. The server mints a short-lived voice session token.
+
+---
+
+## Project layout
+
+```
+server.mjs          HTTP API + static pages
+domain/             Booking, calendar, voice, security
+live.html / live.js Answer-a-call experience
+index.html          Today's jobs + product story
+demo-video/         Remotion demo render
+presentation/       Pitch slide assets
+test/               Unit + integration tests
+```
+
+---
+
+## Submission notes (AssemblyAI Voice Agent Hackathon)
+
+- **Live demo:** https://tryhangon.vercel.app
+- **Repo:** https://github.com/Datwebguy/hangON
+- **Pitch assets:** `presentation/out/`
+- **Demo video render:** `npm run video:render` (requires narration assets)
+
+Deadline reminder: **Sep 30, 2026, 3:00 PM CUT** on [lablab.ai](https://lablab.ai/ai-hackathons/assemblyai-voice-agent-hackathon).

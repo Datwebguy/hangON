@@ -34,18 +34,27 @@ export function resolveSelfCorrections(rawText) {
   // Remove common filler sounds
   text = text.replace(/\b(uh|um|er|ah|like|you know|so yeah)\b/gi, '').replace(/\s{2,}/g, ' ').trim();
 
-  // Pattern: "X, wait/no/actually/make that, Y"
-  const correctionPatterns = [
-    /(?:(?:thursday|tuesday|monday|wednesday|friday|saturday|sunday)(?:\s+at\s+\d+:\d+|\s+at\s+\d+)?)\s*(?:,\s*)?(?:no wait|wait|actually|no make that|make it|rather)\s*,?\s*([a-zA-Z]+(?:\s+at\s+\d+:\d+|\s+at\s+\d+)?(?:\s*[ap]m)?)/i,
-    /(\d+(?::\d+)?\s*(?:am|pm)?)\s*(?:,\s*)?(?:wait|no|actually|make that)\s*,?\s*(\d+(?::\d+)?\s*(?:am|pm)?)/i,
-    /([0-9]+\s+[a-zA-Z\s]+(?:st|ave|road|dr|lane|terrace|blvd))\s*(?:,\s*)?(?:wait|no|sorry)\s*,?\s*([0-9]+\s+[a-zA-Z\s]+(?:st|ave|road|dr|lane|terrace|blvd))/i
-  ];
+  // Keep the final choice after self-corrections: "Thursday... wait, Friday at 10:30am"
+  text = text.replace(
+    /\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)(?:\s+at\s+\d{1,2}(?::\d{2})?(?:\s*[ap]m)?)?\s*(?:,\s*)?(?:no wait|wait|actually|no[, ]?make that|make it|rather)\s*,?\s*([a-zA-Z]+(?:\s+at\s+\d{1,2}(?::\d{2})?(?:\s*[ap]m)?))/gi,
+    '$1'
+  );
+  text = text.replace(
+    /(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:,\s*)?(?:wait|no|actually|make that)\s*,?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/gi,
+    '$2'
+  );
+  text = text.replace(
+    /(\d+\s+[a-zA-Z\s]+(?:st|ave|avenue|road|rd|dr|lane|terrace|blvd))\s*(?:,\s*)?(?:wait|no|sorry)\s*,?\s*(\d+\s+[a-zA-Z\s]+(?:st|ave|avenue|road|rd|dr|lane|terrace|blvd))/gi,
+    '$2'
+  );
 
-  return text;
+  return text.replace(/\s{2,}/g, ' ').trim();
 }
 
 export function extractStructuredJob(text) {
-  const lower = text.toLowerCase();
+  const resolved = resolveSelfCorrections(text);
+  const lower = resolved.toLowerCase();
+  text = resolved;
 
   // Detect service type
   let serviceType = 'General Plumbing / Electrical Repair';

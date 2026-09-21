@@ -4,86 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="./hangon-logo.png">
-    <title>HangON | Live Voice Dispatch Cockpit</title>
+    <title>HangON | Answer a call</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css">
     <link rel="stylesheet" href="./production.css">
   </head>
   <body>
     <div class="app-frame">
-        <!-- Header -->
       <header class="app-header">
         <a class="brand" href="./index.html" aria-label="HangON home">
-          <img class="brand-logo" src="./hangon-logo.png" alt="HangON Logo">
+          <img class="brand-logo" src="./hangon-logo.png" alt="HangON">
           <div class="brand-text-group">
             <span class="brand-name">HangON</span>
-            <span class="brand-sub">Voice Dispatch</span>
+            <span class="brand-sub">Front desk for trades</span>
           </div>
         </a>
 
-        <nav class="main-nav" aria-label="Main navigation">
-          <a href="./index.html">Dispatch Board</a>
-          <a class="active" href="./live.html">Live Cockpit</a>
+        <nav class="main-nav" aria-label="Main">
+          <a href="./index.html">Today's jobs</a>
+          <a class="active" href="./live.html">Answer a call</a>
         </nav>
 
         <div class="header-right-group">
-          <button type="button" class="theme-toggle-btn" aria-label="Toggle theme">
+          <button type="button" class="theme-toggle-btn" aria-label="Switch theme">
             <span class="theme-icon">Light</span>
           </button>
-
           <div class="workspace-status-badge">
             <span class="pulse-dot" aria-hidden="true"></span>
             <div class="status-info">
               <strong>Apex Home Services</strong>
-              <span class="status-caption">Voice Dispatch Ready</span>
+              <span class="status-caption">Ready for calls</span>
             </div>
           </div>
         </div>
       </header>
 
-      <!-- Main Shell -->
       <main class="page-shell call-shell">
-        <!-- Compact Call Top Bar -->
         <section class="cockpit-top-bar">
           <div>
-            <span class="eyebrow">Interactive Call Session</span>
-            <h1>Live Voice Front Desk</h1>
+            <span class="eyebrow">Live call</span>
+            <h1 class="text-balance">Answer like you're at the desk</h1>
           </div>
           <div class="top-bar-right">
             <div id="voicePlacement"></div>
-            <span class="status-chip status-safe" id="callStatus" role="status" aria-live="polite">Ready to Connect</span>
+            <span class="status-chip status-safe" id="callStatus" role="status" aria-live="polite">Ready</span>
           </div>
         </section>
 
-        <!-- Evaluation Presets Strip -->
+        <ol class="flow-steps flow-steps-compact" aria-label="Call steps">
+          <li class="flow-step"><span class="flow-num">1</span><strong>Talk</strong></li>
+          <li class="flow-step"><span class="flow-num">2</span><strong>Confirm</strong></li>
+          <li class="flow-step"><span class="flow-num">3</span><strong>Book</strong></li>
+        </ol>
+
         <section class="quick-preset-bar">
-          <span class="preset-title">Test Scenarios:</span>
+          <span class="preset-title">Or try a sample call:</span>
           <div class="scenario-buttons">
-            <button type="button" class="scenario-btn" id="scenarioWaterHeater">Plumbing: Water Heater Leak</button>
-            <button type="button" class="scenario-btn" id="scenarioElectrical">Electrical: Panel Sparking</button>
-            <button type="button" class="scenario-btn" id="scenarioHvac">HVAC: AC Blowing Warm Air</button>
-            <button type="button" class="scenario-btn" id="scenarioDrain">Plumbing: Drain Backup</button>
+            <button type="button" class="scenario-btn" id="scenarioWaterHeater">Water heater leak</button>
+            <button type="button" class="scenario-btn" id="scenarioElectrical">Sparking panel</button>
+            <button type="button" class="scenario-btn" id="scenarioHvac">AC blowing warm</button>
+            <button type="button" class="scenario-btn" id="scenarioDrain">Kitchen drain backup</button>
           </div>
         </section>
 
-        <!-- Main Cockpit Grid -->
         <section class="call-layout">
-          <!-- Left: Voice Channel & Visualizer -->
           <article class="panel conversation-panel">
             <div class="panel-head">
               <div>
-                <span class="panel-eyebrow">Audio Channel</span>
-                <h2 id="conversationTitle">Ready to Listen</h2>
+                <span class="panel-eyebrow">Call</span>
+                <h2 id="conversationTitle">Ready when you are</h2>
               </div>
               <div class="call-header-btns">
-                <button class="button button-primary" id="start" type="button">Start Voice Call</button>
-                <button class="button button-danger" id="stop" type="button" disabled>End Call</button>
+                <button class="button button-primary" id="start" type="button">Start call</button>
+                <button class="button button-danger" id="stop" type="button" disabled>End call</button>
               </div>
             </div>
 
-            <!-- Minimalist Voice Visualizer -->
             <div class="voice-orb-container" id="visualizerContainer">
               <div class="voice-orb" id="voiceOrb" aria-hidden="true">
                 <div class="orb-core"></div>
@@ -94,46 +92,43 @@
                 <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
                 <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
               </div>
-              <p class="orb-status-text" id="callHint">Click Start Voice Call or choose a test scenario.</p>
+              <p class="orb-status-text" id="callHint">Press Start call and speak, or pick a sample call above.</p>
             </div>
 
-            <!-- Transcript Conversation -->
             <div class="conversation" id="conversation" role="log" aria-live="polite" aria-label="Call conversation">
               <div class="conversation-empty" id="conversationEmpty">
-                <p>Call transcript streams here in real time.</p>
-                <span>Handles messy speech, pauses, and self corrections automatically.</span>
+                <p>The conversation appears here as you talk.</p>
+                <span>HangON follows along even if you change the day or time mid-sentence.</span>
               </div>
             </div>
           </article>
 
-          <!-- Right: Consolidated Dispatch HUD -->
           <aside class="panel hud-panel">
             <div class="panel-head">
               <div>
-                <span class="panel-eyebrow">Execution Engine</span>
-                <h2 id="hud-heading">Autonomous Dispatch</h2>
+                <span class="panel-eyebrow">During the call</span>
+                <h2 id="hud-heading">Job details</h2>
               </div>
-              <span class="status-chip status-neutral" id="changeStatus">Waiting for Call</span>
+              <span class="status-chip status-neutral" id="changeStatus">Waiting</span>
             </div>
 
-            <!-- Live Diagnostics Card -->
             <div class="hud-box voice-canvas-card" id="voiceCanvasCard">
               <div class="hud-box-head">
-                <span class="hud-label">Live Diagnostics &amp; Pricing</span>
-                <span class="badge-tech badge-safe" id="canvasStatusBadge">Standby</span>
+                <span class="hud-label">Quick triage</span>
+                <span class="badge-tech badge-safe" id="canvasStatusBadge">Idle</span>
               </div>
               <div class="canvas-grid">
                 <div class="canvas-field">
                   <span class="canvas-k">Equipment</span>
-                  <strong class="canvas-v" id="canvasEquipment">Waiting for speech...</strong>
+                  <strong class="canvas-v" id="canvasEquipment">Listening…</strong>
                 </div>
                 <div class="canvas-field">
-                  <span class="canvas-k">Triage Guidance</span>
-                  <strong class="canvas-v text-warn" id="canvasDiagnostic">Awaiting symptoms...</strong>
+                  <span class="canvas-k">Safety tip</span>
+                  <strong class="canvas-v text-warn" id="canvasDiagnostic">Waiting for details…</strong>
                 </div>
                 <div class="canvas-field">
-                  <span class="canvas-k">Flat-Rate Estimate</span>
-                  <strong class="canvas-v text-accent" id="canvasPrice">Calculated live</strong>
+                  <span class="canvas-k">Ballpark price</span>
+                  <strong class="canvas-v text-accent" id="canvasPrice">Shown during the call</strong>
                 </div>
                 <div class="canvas-field">
                   <span class="canvas-k">Technician</span>
@@ -142,72 +137,63 @@
               </div>
             </div>
 
-            <!-- Speech Extraction Summary -->
             <div class="hud-box">
               <div class="hud-box-head">
-                <span class="hud-label">Speech Resolution</span>
-                <span class="badge-tech" id="slotAvailabilityBadge">Standby</span>
+                <span class="hud-label">What we heard</span>
+                <span class="badge-tech" id="slotAvailabilityBadge">Idle</span>
               </div>
               <div class="dictation-diff" id="dictationDiff">
                 <div class="diff-raw">
-                  <span class="diff-caption">Caller Speech:</span>
-                  <p id="rawSpeechText">Waiting for caller utterance...</p>
+                  <span class="diff-caption">Caller said</span>
+                  <p id="rawSpeechText">Waiting for the caller…</p>
                 </div>
                 <div class="diff-clean">
-                  <span class="diff-caption">Resolved Booking:</span>
-                  <p id="cleanedSpeechText">Waiting for speech...</p>
+                  <span class="diff-caption">Booking summary</span>
+                  <p id="cleanedSpeechText">Waiting…</p>
                 </div>
               </div>
               <div class="slot-info" id="slotInfo">
-                <strong id="targetSlot">Awaiting schedule request...</strong>
+                <strong id="targetSlot">No time chosen yet</strong>
                 <span id="targetTechnician" hidden>Technician: Mike Miller</span>
               </div>
             </div>
           </aside>
         </section>
 
-        <!-- Flat Below Call Bar: Executed Action & Technical Brief -->
         <section class="bottom-resolution-section" id="bottomResolutionSection">
           <div class="bottom-resolution-grid">
-            <!-- Confirmed Action Receipt -->
             <div class="action-receipt-card" id="actionReceipt" hidden>
               <div class="receipt-headline">
-                <span class="receipt-badge">Action Executed</span>
-                <strong id="receiptTitle">Appointment Locked on Calendar</strong>
+                <span class="receipt-badge">Job booked</span>
+                <strong id="receiptTitle">Saved on Mike's calendar</strong>
               </div>
-              <div class="receipt-details" id="receiptDetails">
-                <!-- Populated dynamically -->
-              </div>
+              <div class="receipt-details" id="receiptDetails"></div>
               <div class="sms-preview-box" id="smsPreview">
-                <span class="sms-badge">SMS Transmitted to Technician</span>
+                <span class="sms-badge">Text to technician</span>
                 <p id="smsMessage"></p>
               </div>
             </div>
 
-            <!-- Post-Call Brief -->
             <div class="hud-box lemur-dossier" id="lemurDossier" hidden>
               <div class="hud-box-head">
-                <span class="hud-label">Post Call Intelligence</span>
-                <span class="badge-tech">Analysis Complete</span>
+                <span class="hud-label">Brief for Mike</span>
+                <span class="badge-tech">Ready</span>
               </div>
-              
               <div class="lemur-summary-block">
-                <span class="lemur-subhead">Technician Brief:</span>
+                <span class="lemur-subhead">What to know before you arrive</span>
                 <p id="lemurSummary"></p>
               </div>
-
               <div class="lemur-sentiment-bar">
                 <div class="sentiment-labels">
-                  <span>Caller State:</span>
-                  <strong id="lemurSentimentScore">100% Calm</strong>
+                  <span>Caller mood</span>
+                  <strong id="lemurSentimentScore">—</strong>
                 </div>
                 <div class="sentiment-meter">
                   <div class="sentiment-fill" style="width: 0%;"></div>
                 </div>
               </div>
-
               <div class="lemur-parts-checklist">
-                <span class="lemur-subhead">Required Equipment Checklist:</span>
+                <span class="lemur-subhead">Bring these parts</span>
                 <ul class="checklist-items" id="lemurPartsList"></ul>
               </div>
             </div>

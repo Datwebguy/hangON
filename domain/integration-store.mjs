@@ -37,7 +37,19 @@ function decrypt(payload) {
   }
 }
 
+async function useDatabase() {
+  const { isDatabaseConfigured } = await import('./db.mjs');
+  return isDatabaseConfigured();
+}
+
 async function readAll() {
+  if (await useDatabase()) {
+    const { getSql, migrate } = await import('./db.mjs');
+    await migrate();
+    const db = getSql();
+    const rows = await db`SELECT workspace_id, data FROM integrations`;
+    return Object.fromEntries(rows.map((row) => [row.workspace_id, row.data]));
+  }
   try {
     const data = JSON.parse(await fsp.readFile(integrationsPath, 'utf8'));
     return data && typeof data === 'object' && !Array.isArray(data) ? data : {};
@@ -48,6 +60,21 @@ async function readAll() {
 }
 
 async function writeAll(data) {
+  if (await useDatabase()) {
+    const { getSql, migrate } = await import('./db.mjs');
+    await migrate();
+    const db = getSql();
+    await db.begin(async (tx) => {
+      await tx`DELETE FROM integrations`;
+      for (const [workspaceId, value] of Object.entries(data)) {
+        await tx`
+          INSERT INTO integrations (workspace_id, data, updated_at)
+          VALUES (${workspaceId}, ${tx.json(value)}, now())
+        `;
+      }
+    });
+    return;
+  }
   await fsp.mkdir(path.dirname(integrationsPath), { recursive: true });
   const temporary = integrationsPath + '.' + process.pid + '.tmp';
   await fsp.writeFile(temporary, JSON.stringify(data, null, 2) + '\n', 'utf8');

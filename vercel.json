@@ -1,7 +1,10 @@
 {
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api" }
+  ],
   "functions": {
-    "server.mjs": {
-      "includeFiles": "{*.html,*.css,*.js,*.png,data/*.json}"
+    "api/index.mjs": {
+      "includeFiles": "{server.mjs,*.html,*.css,*.js,*.png,data/*.json,domain/**}"
     }
   }
 }

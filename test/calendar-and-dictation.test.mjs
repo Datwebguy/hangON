@@ -28,8 +28,9 @@ test('calendar store creates confirmed booking and triggers pro SMS dispatch', a
   assert.equal(result.booking.scheduled_time, 'Friday at 10:30 AM');
   assert.equal(result.booking.status, 'confirmed');
   assert.equal(result.booking.record_changed, true);
-  assert.equal(result.booking.sms_dispatch.status, 'sent');
+  assert.equal(result.booking.sms_dispatch.status, 'queued');
   assert.ok(result.booking.sms_dispatch.message.includes('742 Evergreen Terrace'));
+  assert.equal(result.booking.workspace_id, 'workspace-local');
 
   const list = await store.list();
   assert.ok(list.some((job) => job.customer_name === 'Sarah Miller'));

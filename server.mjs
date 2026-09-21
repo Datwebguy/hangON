@@ -6,23 +6,24 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { publicWorkspace } from './domain/workspace.mjs';
 import { createPreparedRequest, requestProposal, sanitizeDetails, validateRequest } from './domain/request.mjs';
-import { createRequestStore } from './domain/request-store.mjs';
-import { createCalendarStore } from './domain/calendar-store.mjs';
 import { transcribeWithDictation, extractStructuredJob } from './domain/dictation.mjs';
 import { generateLeMURDossier } from './domain/lemur.mjs';
 import { configureWebhookIntegration, getPublicWebhookIntegration, getWebhookIntegration, removeWebhookIntegration } from './domain/integration-store.mjs';
 import { buildSystemPrompt, requestTool, bookServiceTool, checkAvailabilityTool, voiceConfig } from './domain/voice.mjs';
 import { createSession, hasConfiguredOperatorAccess, isProduction, readSession, sessionCookie, verifyOperatorToken } from './domain/security.mjs';
 import { createConfirmationToken, verifyConfirmationToken } from './domain/confirmation.mjs';
+import { readWorkspace } from './domain/db.mjs';
+import { getStores, initStores } from './domain/stores.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4180);
-const workspacePath = path.join(root, 'data', 'workspace.json');
-const requestStore = createRequestStore(path.join(root, 'data', 'requests.json'), { getDeliveryConfig: getWebhookIntegration });
-const calendarStore = createCalendarStore(path.join(root, 'data', 'calendar.json'));
 const publicFiles = new Set(['index.html', 'live.html', 'styles.css', 'production.css', 'app.next.js', 'live.js', 'voice-ui.js', 'auth-ui.js', 'theme-toggle.js', 'pcm-processor.js', 'hangon-logo.png']);
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png' };
 const rateBuckets = new Map();
+
+function stores() {
+  return getStores();
+}
 
 function headers() {
   return {
@@ -77,9 +78,16 @@ async function readBody(req) {
   }
 }
 
+function pruneRateBuckets(now = Date.now()) {
+  for (const [key, value] of rateBuckets) {
+    if (now - value.startedAt >= 120000) rateBuckets.delete(key);
+  }
+}
+
 function rateLimit(req, bucket, limit) {
-  const key = `${req.socket.remoteAddress || 'unknown'}:${bucket}`;
   const now = Date.now();
+  if (rateBuckets.size > 2000) pruneRateBuckets(now);
+  const key = `${req.socket.remoteAddress || 'unknown'}:${bucket}`;
   const current = rateBuckets.get(key);
   if (!current || now - current.startedAt >= 60000) {
     rateBuckets.set(key, { startedAt: now, count: 1 });
@@ -145,12 +153,19 @@ async function assemblyToken() {
 }
 
 async function api(req, res, url) {
+  await initStores();
+  const { calendarStore, requestStore, backend } = stores();
   if (!rateLimit(req, 'api', 120)) return error(res, 429, 'rate_limited', 'Too many requests. Please try again shortly.');
+
+  if (url.pathname === '/api/health') {
+    if (req.method !== 'GET') return error(res, 405, 'method_not_allowed', 'Use GET for health.');
+    return sendJson(res, 200, { data: { ok: true, store: backend } });
+  }
 
   if (url.pathname === '/api/demo/session') {
     if (req.method !== 'GET') return error(res, 405, 'method_not_allowed', 'Use GET for a demo session.');
     if (!rateLimit(req, 'demo-session', 20)) return error(res, 429, 'demo_rate_limited', 'Too many demo sessions were requested.');
-    const workspace = await readJson(workspacePath, {});
+    const workspace = await readWorkspace();
     const current = readSession(req);
     if (current?.role === 'demo' && current.workspace_id === workspace.id) {
       return sendJson(res, 200, { data: { workspace_id: current.workspace_id, role: current.role, csrf: current.csrf, demo: true } });
@@ -166,14 +181,14 @@ async function api(req, res, url) {
     let input;
     try { input = await readBody(req); } catch (e) { return error(res, e.statusCode || 400, 'invalid_json', e.message); }
     if (isProduction() && !verifyOperatorToken(input?.token)) return error(res, 401, 'invalid_operator_token', 'The operator token is invalid.');
-    const workspace = await readJson(workspacePath, {});
+    const workspace = await readWorkspace();
     const created = createSession(workspace.id);
     return sendJson(res, 200, { data: { workspace_id: created.payload.workspace_id, role: created.payload.role, csrf: created.payload.csrf } }, { 'set-cookie': sessionCookie(created.value) });
   }
 
   if (url.pathname === '/api/session') {
     if (req.method !== 'GET') return error(res, 405, 'method_not_allowed', 'Use GET for a session.');
-    const workspace = await readJson(workspacePath, {});
+    const workspace = await readWorkspace();
     const current = readSession(req);
     if (current?.role === 'operator' && current.workspace_id === workspace.id) {
       return sendJson(res, 200, { data: { workspace_id: current.workspace_id, role: current.role, csrf: current.csrf } });
@@ -192,24 +207,32 @@ async function api(req, res, url) {
     if (req.method !== 'GET') return error(res, 405, 'method_not_allowed', 'Use GET for workspace information.');
     const session = sessionOrError(req, res, ['operator', 'demo']);
     if (!session) return;
-    const workspace = await readJson(workspacePath, {});
+    const workspace = await readWorkspace(session.workspace_id);
     return sendJson(res, 200, { data: publicWorkspace(workspace) });
   }
 
   // --- Calendar & Dispatch Endpoints ---
   if (url.pathname === '/api/calendar') {
     if (req.method !== 'GET') return error(res, 405, 'method_not_allowed', 'Use GET for calendar schedule.');
-    const appointments = await calendarStore.list();
-    const availability = await calendarStore.checkAvailability();
-    return sendJson(res, 200, { data: { appointments, availability } });
+    const session = sessionOrError(req, res, ['operator', 'demo']);
+    if (!session) return;
+    const requested = Number(url.searchParams.get('limit') || 50);
+    const limit = Number.isInteger(requested) ? Math.min(Math.max(requested, 1), 100) : 50;
+    const preferred = url.searchParams.get('preferred_time') || '';
+    const appointments = await calendarStore.list({ workspaceId: session.workspace_id, limit });
+    const availability = await calendarStore.checkAvailability(preferred, { workspaceId: session.workspace_id });
+    return sendJson(res, 200, { data: { appointments, availability }, meta: { limit } });
   }
 
   if (url.pathname === '/api/calendar/book') {
     if (req.method !== 'POST') return error(res, 405, 'method_not_allowed', 'Use POST to book an appointment.');
+    const session = sessionOrError(req, res, ['operator', 'demo']);
+    if (!session) return;
+    if (!csrfOrError(req, res, session)) return;
     let input;
     try { input = await readBody(req); } catch (e) { return error(res, e.statusCode || 400, 'invalid_json', e.message); }
     try {
-      const result = await calendarStore.book(input);
+      const result = await calendarStore.book(input, { workspaceId: session.workspace_id });
       return sendJson(res, result.duplicate ? 200 : 201, { data: result.booking, meta: { duplicate: result.duplicate, record_changed: true } });
     } catch (e) {
       return error(res, 400, 'booking_failed', e.message);
@@ -219,6 +242,10 @@ async function api(req, res, url) {
   // --- AssemblyAI Dictation API Endpoint ---
   if (url.pathname === '/api/dictate') {
     if (req.method !== 'POST') return error(res, 405, 'method_not_allowed', 'Use POST for dictation extraction.');
+    const session = sessionOrError(req, res, ['operator', 'demo']);
+    if (!session) return;
+    if (!csrfOrError(req, res, session)) return;
+    if (!rateLimit(req, 'dictate', 30)) return error(res, 429, 'dictate_rate_limited', 'Too many dictation requests.');
     let input = {};
     try { input = await readBody(req); } catch { input = {}; }
     const sampleText = input.utterance || input.text || '';
@@ -226,9 +253,13 @@ async function api(req, res, url) {
     return sendJson(res, 200, { data: result });
   }
 
-  // --- AssemblyAI LeMUR Intelligence Endpoint ---
+  // --- Post-call intelligence dossier ---
   if (url.pathname === '/api/lemur') {
-    if (req.method !== 'POST') return error(res, 405, 'method_not_allowed', 'Use POST for LeMUR dossier generation.');
+    if (req.method !== 'POST') return error(res, 405, 'method_not_allowed', 'Use POST for dossier generation.');
+    const session = sessionOrError(req, res, ['operator', 'demo']);
+    if (!session) return;
+    if (!csrfOrError(req, res, session)) return;
+    if (!rateLimit(req, 'lemur', 30)) return error(res, 429, 'lemur_rate_limited', 'Too many dossier requests.');
     let input = {};
     try { input = await readBody(req); } catch { input = {}; }
     const transcript = input.transcript || input.text || '';
@@ -263,7 +294,7 @@ async function api(req, res, url) {
     if (!session) return;
     if (!process.env.ASSEMBLYAI_API_KEY) return error(res, 503, 'voice_not_configured', 'The voice service is not configured on the server.');
     try {
-      const workspace = await readJson(workspacePath, {});
+      const workspace = await readWorkspace(session.workspace_id);
       const token = await assemblyToken();
       if (url.pathname === '/api/voice-token') return sendJson(res, 200, { token });
       return sendJson(res, 200, {
@@ -289,7 +320,7 @@ async function api(req, res, url) {
     try { input = await readBody(req); } catch (e) { return error(res, e.statusCode || 400, 'invalid_json', e.message); }
     const validation = validateRequest({ ...input, confirmed: true });
     if (!validation.ok) return error(res, 422, 'validation_error', 'Request proposal is invalid.', validation.errors);
-    const workspace = await readJson(workspacePath, {});
+    const workspace = await readWorkspace(session.workspace_id);
     const proposal = requestProposal(validation.value, { workspaceId: session.workspace_id, workspace });
     const confirmationToken = createConfirmationToken({ workspaceId: session.workspace_id, idempotencyKey: proposal.idempotencyKey, summary: proposal.summary, details: proposal.details, route: proposal.route });
     return sendJson(res, 201, { data: { confirmation_token: confirmationToken, route: proposal.route, expires_in_seconds: 300 } });
@@ -311,12 +342,12 @@ async function api(req, res, url) {
       try { input = await readBody(req); } catch (e) { return error(res, e.statusCode || 400, 'invalid_json', e.message); }
       const validation = validateRequest(input);
       if (!validation.ok) return error(res, 422, 'validation_error', 'Request validation failed.', validation.errors);
-      const workspace = await readJson(workspacePath, {});
+      const workspace = await readWorkspace(session.workspace_id);
       const proposal = requestProposal(validation.value, { workspaceId: session.workspace_id, workspace });
       const confirmation = verifyConfirmationToken(input.confirmation_token, { workspaceId: session.workspace_id, idempotencyKey: proposal.idempotencyKey, summary: proposal.summary, details: proposal.details, route: proposal.route });
       if (!confirmation.ok) return error(res, 409, 'confirmation_required', 'A fresh confirmation for this exact request is required.', { reason: confirmation.reason });
 
-      // If this request represents a service booking, commit it to the dispatch calendar!
+      // If this request represents a service booking, commit it to the dispatch calendar.
       let bookingResult = null;
       try {
         const details = validation.value.details || {};
@@ -329,9 +360,9 @@ async function api(req, res, url) {
           job_notes: validation.value.request_summary,
           raw_speech: details.raw_speech || null,
           cleaned_text: details.cleaned_text || null
-        });
+        }, { workspaceId: session.workspace_id });
       } catch (err) {
-        console.error('Calendar booking hook note:', err.message);
+        console.error(JSON.stringify({ request_id: 'calendar_hook', error: err.message }));
       }
 
       const created = createPreparedRequest(validation.value, { workspaceId: session.workspace_id, sessionId: session.sid, workspace });
@@ -389,11 +420,17 @@ function startServer(candidate, attempt = 0) {
     console.error(e.message);
     process.exitCode = 1;
   });
-  server.listen(candidate, () => console.log('HangON running at http://localhost:' + candidate));
+  server.listen(candidate, async () => {
+    const { backend } = await initStores();
+    console.log('HangON running at http://localhost:' + candidate + ' (store: ' + backend + ')');
+  });
 }
 
 if (!process.env.VERCEL) {
   startServer(port);
 }
 
-export default handle;
+export default async function (req, res) {
+  await initStores();
+  return handle(req, res);
+}

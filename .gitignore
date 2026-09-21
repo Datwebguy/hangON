@@ -4,9 +4,15 @@ node_modules/
 !.env.example
 *.log
 *.tmp
+*.temp
 *.bak
 *.cache
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
 coverage/
+.nyc_output/
 test-results/
 data/requests.json
 data/requests.json.bak

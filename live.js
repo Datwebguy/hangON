@@ -96,8 +96,8 @@ function updateVisualizer(state) {
 }
 
 function updateDictationHUD(raw, cleaned) {
-  if (rawSpeechText) rawSpeechText.textContent = raw || 'Processing caller speech...';
-  if (cleanedSpeechText) cleanedSpeechText.textContent = cleaned || 'Extracting booking fields...';
+  if (rawSpeechText) rawSpeechText.textContent = raw || 'Listening to the caller…';
+  if (cleanedSpeechText) cleanedSpeechText.textContent = cleaned || 'Building the booking summary…';
 }
 
 function updateVoiceCanvas(data = {}) {
@@ -107,29 +107,58 @@ function updateVoiceCanvas(data = {}) {
   if (canvasProDistance && data.distance) canvasProDistance.textContent = data.distance;
 }
 
+async function ensureDemoSession() {
+  if (csrfToken) return csrfToken;
+  const sessionRes = await fetch('/api/demo/session', { credentials: 'same-origin' }).catch(() => null);
+  if (sessionRes && sessionRes.ok) {
+    const sBody = await sessionRes.json().catch(() => ({}));
+    csrfToken = sBody.data?.csrf || '';
+  }
+  return csrfToken;
+}
+
+function apiHeaders(extra = {}) {
+  return {
+    'content-type': 'application/json',
+    'x-hangon-csrf': csrfToken,
+    ...extra
+  };
+}
+
+function appendReceiptRow(container, label, value, valueClass = '') {
+  const row = document.createElement('div');
+  row.className = 'receipt-row';
+  const labelEl = document.createElement('span');
+  labelEl.textContent = label;
+  const valueEl = document.createElement('strong');
+  if (valueClass) valueEl.className = valueClass;
+  valueEl.textContent = value;
+  row.append(labelEl, valueEl);
+  container.append(row);
+}
+
 function displayBookingReceipt(booking) {
   if (!actionReceipt) return;
   actionReceipt.hidden = false;
   if (changeStatus) {
-    changeStatus.textContent = 'Action Executed: Slot Locked';
+    changeStatus.textContent = 'Job booked';
     changeStatus.className = 'status-chip status-safe';
   }
   if (slotAvailabilityBadge) {
-    slotAvailabilityBadge.textContent = 'Locked and Confirmed';
+    slotAvailabilityBadge.textContent = 'Confirmed';
     slotAvailabilityBadge.className = 'badge-tech badge-safe';
   }
   if (targetSlot) {
-    targetSlot.textContent = `Confirmed Slot: ${booking.scheduled_time}`;
+    targetSlot.textContent = `Booked: ${booking.scheduled_time}`;
   }
 
   if (receiptDetails) {
-    receiptDetails.innerHTML = `
-      <div class="receipt-row"><span>Customer:</span><strong>${booking.customer_name}</strong></div>
-      <div class="receipt-row"><span>Service:</span><strong>${booking.service_type}</strong></div>
-      <div class="receipt-row"><span>Committed Slot:</span><strong>${booking.scheduled_time}</strong></div>
-      <div class="receipt-row"><span>Service Address:</span><strong>${booking.address}</strong></div>
-      <div class="receipt-row"><span>Status:</span><strong class="text-safe">Locked on Dispatch Calendar</strong></div>
-    `;
+    receiptDetails.replaceChildren();
+    appendReceiptRow(receiptDetails, 'Customer', booking.customer_name || '');
+    appendReceiptRow(receiptDetails, 'Job', booking.service_type || '');
+    appendReceiptRow(receiptDetails, 'When', booking.scheduled_time || '');
+    appendReceiptRow(receiptDetails, 'Where', booking.address || '');
+    appendReceiptRow(receiptDetails, 'Status', 'On Mike\'s calendar', 'text-safe');
   }
 
   if (smsMessage) {
@@ -143,59 +172,76 @@ function displayLemurDossier(data = {}) {
   if (lemurSummary && data.summary) lemurSummary.textContent = data.summary;
   if (lemurSentimentScore && data.sentiment) lemurSentimentScore.textContent = data.sentiment;
   if (lemurPartsList && Array.isArray(data.parts)) {
-    lemurPartsList.innerHTML = data.parts.map((p) => `<li>${p}</li>`).join('');
+    lemurPartsList.replaceChildren();
+    data.parts.forEach((part) => {
+      const item = document.createElement('li');
+      item.textContent = String(part);
+      lemurPartsList.append(item);
+    });
   }
 }
 
 async function executeBookingOnServer(args) {
-  try {
-    const response = await fetch('/api/calendar/book', {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        customer_name: args.customer_name || args.name || 'Sarah Miller',
-        service_type: args.service_type || args.request_summary || 'Water Heater Leak Repair',
-        scheduled_time: args.scheduled_time || 'Friday at 10:30 AM',
-        address: args.address || '742 Evergreen Terrace',
-        phone: args.phone || '(555) 301-4492',
-        urgency: args.urgency || 'urgent',
-        raw_speech: args.raw_speech || null,
-        cleaned_text: args.cleaned_text || null,
-        job_notes: args.request_summary || args.details?.summary || ''
-      })
-    });
-    const body = await response.json().catch(() => ({}));
-    if (response.ok && body.data) {
-      displayBookingReceipt(body.data);
-      return {
-        status: 'booked',
-        record_changed: true,
-        appointment_id: body.data.id,
-        scheduled_slot: body.data.scheduled_time,
-        sms_alert: 'Dispatched to Mike Miller',
-        message: 'Job successfully committed to the technician dispatch calendar.'
-      };
+  await ensureDemoSession();
+  const response = await fetch('/api/calendar/book', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: apiHeaders(),
+    body: JSON.stringify({
+      customer_name: args.customer_name || args.name || 'Sarah Miller',
+      service_type: args.service_type || args.request_summary || 'Water Heater Leak Repair',
+      scheduled_time: args.scheduled_time || 'Friday at 10:30 AM',
+      address: args.address || '742 Evergreen Terrace',
+      phone: args.phone || '(555) 301-4492',
+      urgency: args.urgency || 'urgent',
+      raw_speech: args.raw_speech || null,
+      cleaned_text: args.cleaned_text || null,
+      job_notes: args.request_summary || args.details?.summary || '',
+      self_correction_resolved: Boolean(args.self_correction_resolved)
+    })
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok || !body.data) {
+    const message = body.error?.message || 'Could not save the booking. Please try again.';
+    if (changeStatus) {
+      changeStatus.textContent = 'Booking failed';
+      changeStatus.className = 'status-chip status-warn';
     }
-  } catch (err) {
-    console.error('Booking execution error:', err);
+    throw new Error(message);
   }
 
-  const fallbackBooking = {
-    customer_name: args.customer_name || 'Sarah Miller',
-    service_type: args.service_type || 'Water Heater Leak Repair',
-    scheduled_time: args.scheduled_time || 'Friday at 10:30 AM',
-    address: args.address || '742 Evergreen Terrace',
-    urgency: args.urgency || 'urgent',
-    sms_dispatch: {
-      message: `DISPATCH CONFIRMED: ${args.customer_name || 'Sarah Miller'} | ${args.service_type || 'Water Heater Leak Repair'} | ${args.scheduled_time || 'Friday at 10:30 AM'} | ${args.address || '742 Evergreen Terrace'} | Urgency: HIGH`
-    }
-  };
-  displayBookingReceipt(fallbackBooking);
+  displayBookingReceipt(body.data);
   return {
     status: 'booked',
     record_changed: true,
-    message: 'Job successfully committed to dispatch calendar.'
+    appointment_id: body.data.id,
+    scheduled_slot: body.data.scheduled_time,
+    sms_alert: 'Queued for Mike Miller',
+    message: 'Job saved on the technician calendar.'
+  };
+}
+
+async function checkAvailabilityOnServer(preferredTime = '') {
+  await ensureDemoSession();
+  const url = new URL('/api/calendar', window.location.origin);
+  if (preferredTime) url.searchParams.set('preferred_time', preferredTime);
+  const response = await fetch(url, { credentials: 'same-origin' });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    return {
+      available: true,
+      requested_time: preferredTime,
+      verified_open_slots: ['Tomorrow at 10:30 AM', 'Tomorrow at 3:30 PM', 'Friday at 10:30 AM'],
+      technician: 'Mike Miller'
+    };
+  }
+  const availability = body.data?.availability || {};
+  return {
+    available: Boolean(availability.available || availability.next_open_slot),
+    requested_time: preferredTime,
+    verified_open_slots: availability.recommended_slots || ['Tomorrow at 10:30 AM'],
+    next_open_slot: availability.next_open_slot,
+    technician: 'Mike Miller'
   };
 }
 
@@ -204,23 +250,27 @@ function setReady() {
   session = null;
   start.disabled = false;
   stop.disabled = true;
-  status.textContent = 'Ready to Connect';
+  status.textContent = 'Ready';
   status.className = 'status-chip status-safe';
-  title.textContent = 'Ready to Listen';
-  hint.textContent = 'Click Start Voice Call or select an evaluation preset.';
+  title.textContent = 'Ready when you are';
+  hint.textContent = 'Press Start call, or try a sample call above.';
   updateVisualizer('idle');
 
-  if (canvasEquipment) canvasEquipment.textContent = 'Waiting for speech...';
-  if (canvasDiagnostic) canvasDiagnostic.textContent = 'Awaiting symptoms...';
-  if (canvasPrice) canvasPrice.textContent = 'Calculated live';
+  if (canvasEquipment) canvasEquipment.textContent = 'Listening…';
+  if (canvasDiagnostic) canvasDiagnostic.textContent = 'Waiting for details…';
+  if (canvasPrice) canvasPrice.textContent = 'Shown during the call';
   if (canvasProDistance) canvasProDistance.textContent = 'Mike Miller · On call';
-  if (canvasStatusBadge) canvasStatusBadge.textContent = 'Standby';
-  if (rawSpeechText) rawSpeechText.textContent = 'Waiting for caller utterance...';
-  if (cleanedSpeechText) cleanedSpeechText.textContent = 'Waiting for speech...';
-  if (targetSlot) targetSlot.textContent = 'Awaiting schedule request...';
-  if (slotAvailabilityBadge) slotAvailabilityBadge.textContent = 'Standby';
+  if (canvasStatusBadge) canvasStatusBadge.textContent = 'Idle';
+  if (rawSpeechText) rawSpeechText.textContent = 'Waiting for the caller…';
+  if (cleanedSpeechText) cleanedSpeechText.textContent = 'Waiting…';
+  if (targetSlot) targetSlot.textContent = 'No time chosen yet';
+  if (slotAvailabilityBadge) slotAvailabilityBadge.textContent = 'Idle';
   if (actionReceipt) actionReceipt.hidden = true;
   if (lemurDossier) lemurDossier.hidden = true;
+  if (changeStatus) {
+    changeStatus.textContent = 'Waiting';
+    changeStatus.className = 'status-chip status-neutral';
+  }
 }
 
 function finish(resetUi = true) {
@@ -249,8 +299,8 @@ async function begin() {
   start.disabled = true;
   status.textContent = 'Connecting';
   status.className = 'status-chip status-neutral';
-  title.textContent = 'Connecting Voice Channel';
-  hint.textContent = 'Preparing secure real time audio session...';
+  title.textContent = 'Connecting…';
+  hint.textContent = 'Getting the line ready…';
   updateVisualizer('listening');
 
   try {
@@ -263,7 +313,7 @@ async function begin() {
     const configResponse = await fetch('/api/voice-session', { credentials: 'same-origin' });
     const configBody = await configResponse.json().catch(() => ({}));
     if (!configResponse.ok || !configBody.data?.token) {
-      throw new Error(configBody.error?.message || 'Voice service token request failed.');
+      throw new Error(configBody.error?.message || 'Could not start the voice call. Check that HangON is configured, then try again.');
     }
     const config = configBody.data;
     voice?.setVoices(config.voice?.voices, config.voice?.defaultVoice);
@@ -290,7 +340,7 @@ async function begin() {
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
       });
     } catch (err) {
-      throw new Error('Microphone permission required or select an evaluation preset.');
+      throw new Error('Please allow the microphone, or try a sample call instead.');
     }
 
     const source = capture.createMediaStreamSource(stream);
@@ -382,19 +432,25 @@ async function begin() {
       const toolName = call.name;
 
       if (toolName === 'check_calendar_availability') {
-        return {
-          available: true,
-          requested_time: args.preferred_time,
-          verified_open_slots: ['Tomorrow at 10:30 AM', 'Tomorrow at 3:30 PM', 'Friday at 10:30 AM'],
-          technician: 'Mike Miller (Master Technician)'
-        };
+        return checkAvailabilityOnServer(args.preferred_time || '');
       }
 
-      const result = await executeBookingOnServer(args);
+      let result;
       try {
+        result = await executeBookingOnServer(args);
+      } catch (bookingError) {
+        return {
+          status: 'failed',
+          record_changed: false,
+          message: bookingError.message || 'Booking could not be saved.'
+        };
+      }
+      try {
+        await ensureDemoSession();
         const lemurRes = await fetch('/api/lemur', {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          credentials: 'same-origin',
+          headers: apiHeaders(),
           body: JSON.stringify({
             transcript: args.request_summary || args.service_type || 'Water heater repair',
             metadata: {
@@ -459,11 +515,11 @@ async function begin() {
         while (audioQueue.length && ws.readyState === WebSocket.OPEN) {
           sendAudio(audioQueue.shift());
         }
-        status.textContent = 'Voice Active';
+        status.textContent = 'On the line';
         status.className = 'status-chip status-safe';
-        title.textContent = 'HangON Listening';
+        title.textContent = 'Listening';
         stop.disabled = false;
-        hint.textContent = 'Speak naturally. Explain your plumbing or electrical repair.';
+        hint.textContent = 'Speak naturally about the repair you need.';
         updateVisualizer('listening');
       }
 
@@ -471,13 +527,13 @@ async function begin() {
         flushPlayback();
         lastEvent = message.type;
         updateVisualizer('listening');
-        title.textContent = 'Caller Speaking';
+        title.textContent = 'Caller speaking';
       }
 
       if (message.type === 'reply.started') {
         lastEvent = message.type;
         updateVisualizer('speaking');
-        title.textContent = 'HangON Responding';
+        title.textContent = 'HangON speaking';
       }
 
       if (message.type === 'transcript.user') {
@@ -501,17 +557,18 @@ async function begin() {
           });
         }
 
-        fetch('/api/dictate', {
+        ensureDemoSession().then(() => fetch('/api/dictate', {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          credentials: 'same-origin',
+          headers: apiHeaders(),
           body: JSON.stringify({ utterance: text })
-        })
+        }))
           .then((r) => r.json())
           .then((data) => {
             if (data.data?.structured) {
               const s = data.data.structured;
               updateDictationHUD(text, `${s.service_type} for ${s.customer_name} on ${s.scheduled_time} (${s.address})`);
-              if (targetSlot) targetSlot.textContent = `Detected Slot: ${s.scheduled_time}`;
+              if (targetSlot) targetSlot.textContent = `Suggested time: ${s.scheduled_time}`;
             }
           })
           .catch(() => {});
@@ -526,7 +583,7 @@ async function begin() {
       if (message.type === 'tool.call') {
         pending.push(message);
         if (changeStatus) {
-          changeStatus.textContent = 'Executing Booking';
+          changeStatus.textContent = 'Booking the job…';
           changeStatus.className = 'status-chip status-warn';
         }
         void flushTools();
@@ -547,7 +604,7 @@ async function begin() {
           void flushTools();
         }
         updateVisualizer('listening');
-        title.textContent = 'Listening for Caller';
+        title.textContent = 'Listening';
       }
     });
 
@@ -556,9 +613,9 @@ async function begin() {
 
     session = { ws, stream, capture, playback };
   } catch (err) {
-    status.textContent = 'Notice';
+    status.textContent = 'Needs attention';
     status.className = 'status-chip status-warn';
-    hint.textContent = err.message || 'Microphone error. Try the evaluation presets.';
+    hint.textContent = err.message || 'Microphone issue. Try a sample call instead.';
     start.disabled = false;
     updateVisualizer('idle');
   }
@@ -574,62 +631,79 @@ async function runSimulatedScenario(scenario) {
 
   start.disabled = true;
   stop.disabled = false;
-  status.textContent = 'Call In Progress';
+  status.textContent = 'On the line';
   status.className = 'status-chip status-safe';
-  title.textContent = 'Voice Session Active';
-  hint.textContent = 'Processing real time caller conversation and structured extraction.';
+  title.textContent = 'Sample call running';
+  hint.textContent = 'Watch HangON confirm the job and book the visit.';
 
-  addMessage('agent', 'Apex Plumbing and Electrical Dispatch, this is HangON. Mike is on a job right now, how can I help you today?');
+  addMessage('agent', 'Apex Home Services, this is HangON. Mike is on a job right now — how can I help?');
   updateVisualizer('speaking');
   await new Promise((r) => setTimeout(r, 1200));
 
   updateVisualizer('listening');
-  title.textContent = 'Caller Speaking';
+  title.textContent = 'Caller speaking';
   addMessage('caller', scenario.callerSpeech);
-  updateDictationHUD(scenario.callerSpeech, 'Resolving self corrections in speech...');
+  updateDictationHUD(scenario.callerSpeech, 'Catching the final day and time…');
 
   updateVoiceCanvas(scenario.canvasData);
+  if (canvasStatusBadge) canvasStatusBadge.textContent = 'Live';
 
   await new Promise((r) => setTimeout(r, 1500));
 
+  await ensureDemoSession();
   const dictationRes = await fetch('/api/dictate', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    credentials: 'same-origin',
+    headers: apiHeaders(),
     body: JSON.stringify({ utterance: scenario.callerSpeech })
   }).then((r) => r.json()).catch(() => ({}));
 
   const structured = dictationRes.data?.structured || scenario.structured;
   updateDictationHUD(
     scenario.callerSpeech,
-    `${structured.service_type} for ${structured.customer_name} · Slot: ${structured.scheduled_time} (${structured.address})`
+    `${structured.service_type} for ${structured.customer_name} · ${structured.scheduled_time} · ${structured.address}`
   );
 
   updateVisualizer('speaking');
-  title.textContent = 'Verifying Schedule and Triage';
-  const triageTip = scenario.canvasData?.diagnostic || 'I am looking into this right away.';
-  const priceTip = scenario.canvasData?.price || 'Standard Rates apply';
-  const confirmationSpeech = `I understand, that ${structured.service_type} needs attention. First: ${triageTip}. I checked Mike's dispatch schedule and ${structured.scheduled_time} is open. Estimate: ${priceTip}. I have your address as ${structured.address}. Shall I lock that slot into Mike's calendar for you?`;
+  title.textContent = 'Confirming details';
+  const triageTip = scenario.canvasData?.diagnostic || 'I can help right away.';
+  const priceTip = scenario.canvasData?.price || 'Standard rates apply';
+  const confirmationSpeech = `Got it — ${structured.service_type}. First: ${triageTip}. ${structured.scheduled_time} is open on Mike's schedule. Estimate: ${priceTip}. Address ${structured.address}. Shall I lock that in?`;
   addMessage('agent', confirmationSpeech);
   await new Promise((r) => setTimeout(r, 1800));
 
   updateVisualizer('listening');
-  title.textContent = 'Caller Confirming';
-  addMessage('caller', 'Yes please, thank you for the triage guidance. Go ahead and lock it in.');
+  title.textContent = 'Caller confirming';
+  addMessage('caller', 'Yes please — go ahead and lock it in.');
   await new Promise((r) => setTimeout(r, 1200));
 
   updateVisualizer('speaking');
-  title.textContent = 'Executing Booking';
+  title.textContent = 'Booking the job';
   if (changeStatus) {
-    changeStatus.textContent = 'Committing Booking to Calendar';
+    changeStatus.textContent = 'Saving to calendar…';
     changeStatus.className = 'status-chip status-warn';
   }
 
-  const bookingResult = await executeBookingOnServer(structured);
+  try {
+    await executeBookingOnServer(structured);
+  } catch (bookingError) {
+    status.textContent = 'Needs attention';
+    status.className = 'status-chip status-warn';
+    hint.textContent = bookingError.message || 'Could not save the booking.';
+    title.textContent = 'Booking failed';
+    simulatedCallRunning = false;
+    stop.disabled = true;
+    start.disabled = false;
+    updateVisualizer('idle');
+    return;
+  }
 
   try {
+    await ensureDemoSession();
     const lemurRes = await fetch('/api/lemur', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      credentials: 'same-origin',
+      headers: apiHeaders(),
       body: JSON.stringify({
         transcript: scenario.callerSpeech,
         metadata: {
@@ -653,10 +727,10 @@ async function runSimulatedScenario(scenario) {
     displayLemurDossier(scenario.lemurData);
   }
 
-  addMessage('agent', `All set, ${structured.customer_name}. Your appointment is confirmed for ${structured.scheduled_time} at ${structured.address}. I have transmitted an SMS dispatch alert to Mike's phone with your repair details.`);
-  hint.textContent = 'Action Executed: Job committed to dispatch calendar and SMS alert sent.';
-  title.textContent = 'Call Completed · Booking Committed';
-  status.textContent = 'Job Booked';
+  addMessage('agent', `All set, ${structured.customer_name}. You're booked for ${structured.scheduled_time} at ${structured.address}. I'll text Mike the job details now.`);
+  hint.textContent = 'Job booked. Mike gets the details on his phone.';
+  title.textContent = 'Call complete';
+  status.textContent = 'Job booked';
   updateVisualizer('idle');
   simulatedCallRunning = false;
   stop.disabled = true;

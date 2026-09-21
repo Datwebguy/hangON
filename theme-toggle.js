@@ -21,9 +21,11 @@
     document.querySelectorAll('.theme-toggle-btn').forEach((btn) => {
       const isLight = theme === 'light';
       btn.setAttribute('aria-label', isLight ? 'Switch to dark theme' : 'Switch to light theme');
-      btn.innerHTML = isLight 
-        ? '<span class="theme-icon">Dark</span>' 
-        : '<span class="theme-icon">Light</span>';
+      btn.replaceChildren();
+      const icon = document.createElement('span');
+      icon.className = 'theme-icon';
+      icon.textContent = isLight ? 'Dark' : 'Light';
+      btn.append(icon);
     });
   }
 

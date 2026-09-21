@@ -13,7 +13,7 @@ function renderAppointments(appointments) {
   if (!appointments || !appointments.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-row';
-    empty.textContent = 'No jobs booked yet. Start a call to book the first appointment.';
+    empty.textContent = 'No jobs yet. Answer a call to book the first one.';
     appointmentsFeed.append(empty);
     return;
   }
@@ -81,7 +81,7 @@ async function loadDashboard() {
 
       if (todayScheduleCount) {
         const count = allAppointments.length;
-        todayScheduleCount.textContent = `${count} Jobs Active`;
+        todayScheduleCount.textContent = count === 1 ? '1 job' : `${count} jobs`;
       }
       if (nextOpenSlot && calData.data?.availability?.next_open_slot) {
         nextOpenSlot.textContent = calData.data.availability.next_open_slot;
@@ -92,7 +92,11 @@ async function loadDashboard() {
   } catch (err) {
     console.warn('Dashboard live load notice:', err.message);
     if (appointmentsFeed) {
-      appointmentsFeed.innerHTML = '<div class="empty-row">Dispatch board ready. Click Start Live Call to test the voice agent.</div>';
+      appointmentsFeed.replaceChildren();
+      const empty = document.createElement('div');
+      empty.className = 'empty-row';
+      empty.textContent = 'Schedule will appear here. Open Answer a call to book a job.';
+      appointmentsFeed.append(empty);
     }
   }
 }

@@ -1526,6 +1526,71 @@ html[data-theme="light"] .bottom-resolution-grid .lemur-dossier {
   box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
 }
 
+.text-balance { text-wrap: balance; }
+.text-pretty { text-wrap: pretty; }
+
+.flow-steps {
+  list-style: none;
+  margin: 0 0 28px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.flow-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-card);
+}
+
+.flow-step strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.flow-step p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-secondary);
+  line-height: 1.45;
+}
+
+.flow-num {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #04140f;
+  background: var(--emerald);
+}
+
+.flow-steps-compact {
+  margin: 0 0 16px;
+}
+
+.flow-steps-compact .flow-step {
+  align-items: center;
+  padding: 10px 14px;
+}
+
+.flow-steps-compact .flow-step strong {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .flow-steps { grid-template-columns: 1fr; }
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .hero-section { grid-template-columns: 1fr; }
@@ -1533,6 +1598,53 @@ html[data-theme="light"] .bottom-resolution-grid .lemur-dossier {
   .dispatch-summary-strip { grid-template-columns: 1fr; }
   .call-layout { grid-template-columns: 1fr; }
   .bottom-resolution-grid { grid-template-columns: 1fr; }
-  .app-header { padding: 0 16px; }
-  .main-nav { display: none; }
+  .app-header {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "brand actions"
+      "nav nav";
+    align-items: center;
+    gap: 10px 12px;
+    height: auto;
+    min-height: 0;
+    padding: 12px 16px;
+  }
+  .brand { grid-area: brand; }
+  .header-right-group { grid-area: actions; margin-left: 0; }
+  .main-nav {
+    grid-area: nav;
+    display: flex;
+    width: 100%;
+    gap: 14px;
+    overflow-x: auto;
+  }
+  .workspace-status-badge { display: none; }
+  .brand-sub { display: none; }
+  .page-shell {
+    padding: 18px 16px 48px;
+  }
+  .cockpit-top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .cockpit-top-bar h1 {
+    font-size: 22px;
+    line-height: 1.25;
+  }
+  .call-header-btns {
+    flex-wrap: wrap;
+  }
+  .scenario-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .top-bar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
 }

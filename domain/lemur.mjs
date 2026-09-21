@@ -71,6 +71,6 @@ export function generateLeMURDossier(transcriptText, metadata = {}) {
     },
     customer_sms: `Apex Plumbing and Electrical: Hi ${customerName}, your appointment for ${serviceType} is locked for ${scheduledTime} at ${address}. Mike Miller will arrive with parts ready. Questions? Reply to this text.`,
     pro_sms: `DISPATCH ALERT: ${customerName} | ${serviceType} | ${scheduledTime} | ${address} | Est: ${estPrice} | Urgent`,
-    model: 'AssemblyAI LeMUR (Universal-3.5 Pro Analysis)'
+    model: 'HangON post-call dossier (local heuristic over AssemblyAI call context)'
   };
 }

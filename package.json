@@ -4,6 +4,10 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
+    "start:key": "node start-with-key.mjs",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:migrate": "node scripts/migrate.mjs",
     "test": "node --test test/*.test.mjs",
     "video:studio": "remotion studio demo-video/src/index.jsx",
     "video:render": "remotion render demo-video/src/index.jsx HangONDemo demo-video/out/hangon-demo.mp4 --codec=h264 --audio --public-dir=demo-video/public",
@@ -19,5 +23,8 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "postgres": "^3.4.9"
   }
 }

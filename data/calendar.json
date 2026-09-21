@@ -23,7 +23,8 @@
       "self_correction_resolved": true,
       "model": "AssemblyAI Universal-3.5 Pro Dictation"
     },
-    "created_at": "2026-09-18T16:29:39.784Z"
+    "created_at": "2026-09-18T16:29:39.784Z",
+    "workspace_id": "workspace-local"
   },
   {
     "id": "job-seed-2",
@@ -49,7 +50,8 @@
       "self_correction_resolved": true,
       "model": "AssemblyAI Universal-3.5 Pro Dictation"
     },
-    "created_at": "2026-09-18T14:43:04.586Z"
+    "created_at": "2026-09-18T14:43:04.586Z",
+    "workspace_id": "workspace-local"
   },
   {
     "id": "job-seed-3",
@@ -62,7 +64,8 @@
     "job_notes": "Water heater pilot light won't stay lit. Pilot assembly diagnostic.",
     "status": "in_progress",
     "dispatched_to": "Mike (Apex Owner / Pro)",
-    "created_at": "2026-09-18T11:16:49.275Z"
+    "created_at": "2026-09-18T11:16:49.275Z",
+    "workspace_id": "workspace-local"
   },
   {
     "id": "job-seed-4",
@@ -75,7 +78,8 @@
     "job_notes": "Kitchen sink backing up into dishwasher line. Advised not to run dishwasher.",
     "status": "confirmed",
     "dispatched_to": "Mike (Apex Owner / Pro)",
-    "created_at": "2026-09-18T08:16:49.275Z"
+    "created_at": "2026-09-18T08:16:49.275Z",
+    "workspace_id": "workspace-local"
   },
   {
     "id": "job-seed-5",
@@ -88,6 +92,7 @@
     "job_notes": "Flickering garage circuits and breaker reset test.",
     "status": "confirmed",
     "dispatched_to": "Mike (Apex Owner / Pro)",
-    "created_at": "2026-09-18T02:16:49.275Z"
+    "created_at": "2026-09-18T02:16:49.275Z",
+    "workspace_id": "workspace-local"
   }
 ]

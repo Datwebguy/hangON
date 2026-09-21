@@ -54,7 +54,8 @@ export function readSession(req) {
 }
 
 export function sessionCookie(value) {
-  return `${COOKIE_NAME}=${encodeURIComponent(value)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_TTL_MS / 1000}`;
+  const secure = isProduction() ? '; Secure' : '';
+  return `${COOKIE_NAME}=${encodeURIComponent(value)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_TTL_MS / 1000}${secure}`;
 }
 
 export function isProduction() {

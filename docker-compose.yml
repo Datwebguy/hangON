@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hangon-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hangon
+      POSTGRES_PASSWORD: hangon
+      POSTGRES_DB: hangon
+    ports:
+      - "5432:5432"
+    volumes:
+      - hangon_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hangon -d hangon"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  hangon_pg_data:

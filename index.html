@@ -4,175 +4,169 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="./hangon-logo.png">
-    <title>HangON | Autonomous Voice Dispatch</title>
+    <title>HangON | Your phone answers and books the job</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css">
     <link rel="stylesheet" href="./production.css">
   </head>
   <body>
     <div class="app-frame">
-      <!-- Header -->
       <header class="app-header">
         <a class="brand" href="./index.html" aria-label="HangON home">
-          <img class="brand-logo" src="./hangon-logo.png" alt="HangON Logo">
+          <img class="brand-logo" src="./hangon-logo.png" alt="HangON">
           <div class="brand-text-group">
             <span class="brand-name">HangON</span>
-            <span class="brand-sub">Voice Dispatch</span>
+            <span class="brand-sub">Front desk for trades</span>
           </div>
         </a>
 
-        <nav class="main-nav" aria-label="Main navigation">
-          <a class="active" href="./index.html">Dispatch Board</a>
-          <a href="#showcase">Speech to Action</a>
-          <a href="#calendar">Schedule</a>
-          <a href="./live.html" class="nav-highlight">Start Live Call</a>
+        <nav class="main-nav" aria-label="Main">
+          <a class="active" href="./index.html">Today's jobs</a>
+          <a href="#how-it-works">How it works</a>
+          <a href="#schedule">Schedule</a>
+          <a href="./live.html" class="nav-highlight">Answer a call</a>
         </nav>
 
         <div class="header-right-group">
-          <button type="button" class="theme-toggle-btn" aria-label="Toggle theme">
+          <button type="button" class="theme-toggle-btn" aria-label="Switch theme">
             <span class="theme-icon">Light</span>
           </button>
-
           <div class="workspace-status-badge">
             <span class="pulse-dot" aria-hidden="true"></span>
             <div class="status-info">
               <strong id="headerWorkspaceName">Apex Home Services</strong>
-              <span class="status-caption">Voice Dispatch Active</span>
+              <span class="status-caption">Ready for calls</span>
             </div>
           </div>
         </div>
       </header>
 
-      <!-- Main Content -->
       <main class="page-shell">
-        <!-- Hero Section -->
         <section class="hero-section">
           <div class="hero-content">
             <div class="pill-badge">
               <span class="indicator-dot"></span>
-              <span>Autonomous Voice Dispatch</span>
+              <span>Built for solo plumbers, electricians &amp; HVAC pros</span>
             </div>
-            <h1 class="hero-headline">Autonomous Voice Front Desk.</h1>
-            <p class="hero-subtext">
-              Never miss a job while working on site. HangON answers every call, diagnoses repairs, and confirms bookings directly on your calendar.
+            <h1 class="hero-headline text-balance">Never miss a job while your hands are full.</h1>
+            <p class="hero-subtext text-pretty">
+              HangON answers the phone, figures out the repair, and books the visit on your schedule — while you stay on the job.
             </p>
             <div class="hero-cta-group">
               <a class="button button-primary button-lg" href="./live.html">
-                <span>Start Live Voice Call</span>
+                <span>Try a live call</span>
               </a>
-              <a class="button button-secondary button-lg" href="#calendar">
-                <span>View Schedule</span>
+              <a class="button button-secondary button-lg" href="#schedule">
+                <span>See today's schedule</span>
               </a>
             </div>
           </div>
 
-          <!-- Hero Preview Card -->
-          <div class="hero-card-preview">
+          <div class="hero-card-preview" aria-label="Example booked job">
             <div class="preview-header">
               <div class="preview-avatar">M</div>
               <div>
-                <strong>Apex Dispatch</strong>
-                <span class="tag-status">Live Call Captured</span>
+                <strong>Mike's schedule</strong>
+                <span class="tag-status">Just booked from a call</span>
               </div>
-              <span class="status-chip status-safe ml-auto">Confirmed</span>
+              <span class="status-chip status-safe ml-auto">Booked</span>
             </div>
             <div class="preview-callout">
-              <span class="preview-callout-label">Incoming Repair Dispatch</span>
-              <strong>Water Heater Valve Replacement</strong>
-              <p>Sarah Miller · Friday at 10:30 AM · 742 Evergreen Terrace</p>
+              <span class="preview-callout-label">New job</span>
+              <strong>Water heater valve repair</strong>
+              <p>Sarah Miller · Friday 10:30 AM · 742 Evergreen Terrace</p>
             </div>
             <div class="preview-action-status">
-              <span class="status-chip status-neutral">Locked on Calendar</span>
-              <span class="status-chip status-neutral">SMS Transmitted</span>
+              <span class="status-chip status-neutral">On the calendar</span>
+              <span class="status-chip status-neutral">Text sent to Mike</span>
             </div>
           </div>
         </section>
 
-        <!-- Speech to Action Showcase: Red vs Green Comparison -->
-        <section class="section-block" id="showcase">
+        <section class="section-block" id="how-it-works">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">Interactive Comparison</p>
-              <h2>Speech to Confirmed Booking</h2>
-              <p class="section-intro">Callers hesitate and correct themselves. See how natural speech transforms into an executed appointment.</p>
+              <p class="eyebrow">Simple flow</p>
+              <h2 class="text-balance">From messy call to booked job</h2>
+              <p class="section-intro text-pretty">Callers change their minds mid-sentence. HangON keeps the final answer and books the right time.</p>
             </div>
           </div>
 
+          <ol class="flow-steps" aria-label="How HangON works">
+            <li class="flow-step">
+              <span class="flow-num">1</span>
+              <div>
+                <strong>Answer</strong>
+                <p>HangON picks up when you can't.</p>
+              </div>
+            </li>
+            <li class="flow-step">
+              <span class="flow-num">2</span>
+              <div>
+                <strong>Confirm</strong>
+                <p>Reads back the job, time, and address.</p>
+              </div>
+            </li>
+            <li class="flow-step">
+              <span class="flow-num">3</span>
+              <div>
+                <strong>Book</strong>
+                <p>Locks the slot and texts you the details.</p>
+              </div>
+            </li>
+          </ol>
+
           <div class="showcase-grid">
-            <!-- Left: Red Box for Natural Messy Speech -->
             <article class="showcase-card showcase-red">
               <div class="card-tag">
-                <span class="tag-label-red">Natural Caller Speech</span>
-                <span class="tag-pill pill-red">Unstructured Input</span>
+                <span class="tag-label-red">What the caller said</span>
               </div>
               <blockquote class="raw-speech-bubble bubble-red">
-                “My water heater is making a loud noise and leaking from the valve. Can someone come Thursday? Actually Thursday my wife has the car, make it Friday at 10:30 AM if possible. It is Sarah Miller on 742 Evergreen.”
+                “My water heater is leaking. Can someone come Thursday? Actually Thursday my wife has the car — make it Friday at 10:30. Sarah Miller on 742 Evergreen.”
               </blockquote>
               <div class="comparison-points">
                 <div class="point-item point-red">
-                  <span class="point-badge badge-red">Speech Issue</span>
-                  <span>Caller hesitates and self corrects Thursday to Friday</span>
-                </div>
-                <div class="point-item point-red">
-                  <span class="point-badge badge-red">Trade Tradeoff</span>
-                  <span>Most voice systems get confused or book the wrong day</span>
+                  <span class="point-badge badge-red">Changed their mind</span>
+                  <span>Thursday became Friday mid-call</span>
                 </div>
               </div>
             </article>
 
-            <!-- Right: Green Box for Confirmed Structured Booking -->
             <article class="showcase-card showcase-green">
               <div class="card-tag">
-                <span class="tag-label-green">Resolved Booking</span>
-                <span class="tag-pill pill-green">Executed Output</span>
+                <span class="tag-label-green">What got booked</span>
               </div>
-              
               <div class="readback-box box-green">
-                <span class="readback-label text-green">Spoken Confirmation:</span>
-                <p class="readback-text">“Understood, Sarah. I have you scheduled for a Water Heater Inspection on Friday at 10:30 AM at 742 Evergreen Terrace. Confirmed on Mike's calendar.”</p>
+                <span class="readback-label text-green">HangON said:</span>
+                <p class="readback-text">“Got it, Sarah. Water heater inspection Friday at 10:30 AM at 742 Evergreen Terrace. Shall I lock that in for Mike?”</p>
               </div>
-
               <div class="structured-payload-view view-green">
-                <div class="payload-row">
-                  <span class="k">Customer</span>
-                  <span class="v">Sarah Miller</span>
-                </div>
-                <div class="payload-row">
-                  <span class="k">Service</span>
-                  <span class="v">Water Heater Inspection</span>
-                </div>
-                <div class="payload-row">
-                  <span class="k">Committed Slot</span>
-                  <span class="v text-green">Friday at 10:30 AM</span>
-                </div>
-                <div class="payload-row">
-                  <span class="k">Location</span>
-                  <span class="v">742 Evergreen Terrace</span>
-                </div>
+                <div class="payload-row"><span class="k">Customer</span><span class="v">Sarah Miller</span></div>
+                <div class="payload-row"><span class="k">Job</span><span class="v">Water heater inspection</span></div>
+                <div class="payload-row"><span class="k">When</span><span class="v text-green">Friday at 10:30 AM</span></div>
+                <div class="payload-row"><span class="k">Where</span><span class="v">742 Evergreen Terrace</span></div>
               </div>
-
               <div class="executed-action-receipt receipt-green">
                 <div>
-                  <strong class="text-green">Action Executed: Locked on Dispatch Calendar</strong>
-                  <span class="receipt-sub">SMS alert transmitted to technician</span>
+                  <strong class="text-green">Job booked on Mike's calendar</strong>
+                  <span class="receipt-sub">Text alert ready for the technician</span>
                 </div>
               </div>
             </article>
           </div>
         </section>
 
-        <!-- Live Dispatch Calendar -->
-        <section class="section-block" id="calendar">
+        <section class="section-block" id="schedule">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">Live Operations</p>
-              <h2>Technician Dispatch Schedule</h2>
-              <p class="section-intro">Active schedule for today and tomorrow. Confirmed voice calls commit directly here.</p>
+              <p class="eyebrow">Live schedule</p>
+              <h2 class="text-balance">Today's jobs</h2>
+              <p class="section-intro text-pretty">Confirmed calls land here. Open a live call to add another booking.</p>
             </div>
             <div>
-              <a class="button button-primary" href="./live.html">Test Voice Call</a>
+              <a class="button button-primary" href="./live.html">Answer a call</a>
             </div>
           </div>
 
@@ -183,30 +177,27 @@
                 <strong class="sm-val">Mike Miller</strong>
               </div>
               <div class="summary-metric">
-                <span class="sm-label">Active Bookings</span>
-                <strong class="sm-val" id="todayScheduleCount">3 Jobs</strong>
+                <span class="sm-label">Active jobs</span>
+                <strong class="sm-val" id="todayScheduleCount">—</strong>
               </div>
               <div class="summary-metric">
-                <span class="sm-label">Next Open Slot</span>
+                <span class="sm-label">Next open slot</span>
                 <strong class="sm-val text-green" id="nextOpenSlot">Tomorrow at 10:30 AM</strong>
               </div>
             </div>
-
-            <!-- Appointments List -->
             <div class="appointments-feed" id="appointmentsFeed">
-              <div class="empty-row">Loading dispatch schedule...</div>
+              <div class="empty-row">Loading today's jobs…</div>
             </div>
           </div>
         </section>
       </main>
 
-      <!-- Footer -->
       <footer class="app-footer">
         <div class="footer-content">
-          <p>HangON · Autonomous Voice Dispatch</p>
+          <p>HangON · Voice front desk for service trades</p>
           <div class="footer-links">
-            <a href="./live.html">Live Cockpit</a>
-            <a href="https://github.com/Datwebguy/hangon" target="_blank" rel="noopener">GitHub Repository</a>
+            <a href="./live.html">Answer a call</a>
+            <a href="https://github.com/Datwebguy/hangon" target="_blank" rel="noopener">Project page</a>
           </div>
         </div>
       </footer>
