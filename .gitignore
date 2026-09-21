@@ -31,3 +31,4 @@ demo-video/out/
 demo-video/public/narration.wav
 demo-video/public/narration-edge.mp3
 node_modules/.remotion/
+.env*
