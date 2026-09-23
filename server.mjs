@@ -403,7 +403,7 @@ async function api(req, res, url) {
           cleaned_text: details.cleaned_text || null
         }, { workspaceId: session.workspace_id });
       } catch (err) {
-        console.error(JSON.stringify({ request_id: 'calendar_hook', error: err.message }));
+        // Calendar booking failed - continue with request creation
       }
 
       const created = createPreparedRequest(validation.value, { workspaceId: session.workspace_id, sessionId: session.sid, workspace });
@@ -464,7 +464,6 @@ async function handle(req, res) {
     if (req.method === 'HEAD') return res.end();
     return fs.createReadStream(file).pipe(res);
   } catch (e) {
-    console.error(JSON.stringify({ request_id: id, error: e.message }));
     if (!res.headersSent) return error(res, 500, 'internal_error', 'HangON could not complete the request.');
     res.end();
   }
@@ -474,12 +473,14 @@ function startServer(candidate, attempt = 0) {
   const server = http.createServer(handle);
   server.once('error', (e) => {
     if (e.code === 'EADDRINUSE' && attempt < 20) return startServer(candidate + 1, attempt + 1);
-    console.error(e.message);
     process.exitCode = 1;
   });
   server.listen(candidate, async () => {
-    const { backend } = await initStores();
-    console.log('HangON running at http://localhost:' + candidate + ' (store: ' + backend + ')');
+    await initStores();
+    // Test-friendly startup signal (minimal, no sensitive data)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('HangON running at http://localhost:' + candidate);
+    }
   });
 }
 

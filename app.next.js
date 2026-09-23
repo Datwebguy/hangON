@@ -90,7 +90,7 @@ async function loadDashboard() {
       renderAppointments([]);
     }
   } catch (err) {
-    console.warn('Dashboard live load notice:', err.message);
+    // Dashboard load failed - show empty state
     if (appointmentsFeed) {
       appointmentsFeed.replaceChildren();
       const empty = document.createElement('div');

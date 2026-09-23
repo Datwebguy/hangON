@@ -21,8 +21,6 @@ if (!process.env.ASSEMBLYAI_API_KEY) {
 if (!process.env.HANGON_INTEGRATION_ENCRYPTION_KEY && process.env.NODE_ENV !== 'production') {
   if (!fs.existsSync(integrationKeyFile)) fs.writeFileSync(integrationKeyFile, crypto.randomBytes(32).toString('hex') + '\n', { encoding: 'utf8', flag: 'wx' });
   process.env.HANGON_INTEGRATION_ENCRYPTION_KEY = fs.readFileSync(integrationKeyFile, 'utf8').trim();
-  console.log('Workspace integration encryption key loaded locally.');
 }
 
-console.log('AssemblyAI key loaded server-side. Starting HangON without exposing it to the browser.');
 await import('./server.mjs');

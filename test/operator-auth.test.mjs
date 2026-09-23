@@ -36,9 +36,16 @@ async function startProductionServer() {
   child.stderr.on('data', (chunk) => { output += chunk.toString(); });
   const deadline = Date.now() + 5000;
   while (Date.now() < deadline) {
-    if (output.includes(`http://localhost:${port}`)) return { child, baseUrl: `http://127.0.0.1:${port}` };
+    // Server is ready when it's listening (we know the port is free)
+    // Simple connectivity check instead of looking for specific log message
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/api/health`, { signal: AbortSignal.timeout(100) });
+      if (response.ok) return { child, baseUrl: `http://127.0.0.1:${port}` };
+    } catch {
+      // Server not ready yet
+    }
     if (child.exitCode !== null) throw new Error(`Server exited before starting: ${output}`);
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
   child.kill();
   throw new Error(`Server did not start: ${output}`);
