@@ -53,6 +53,7 @@ export async function structuredCompletion({ system, user, schemaName, schema, m
 
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
+    console.error(`[hangon] LLM Gateway ${response.status}: ${JSON.stringify(body).slice(0, 1000)}`);
     const detail = body.error?.message || body.error || body.message || `HTTP ${response.status}`;
     throw fail(502, 'llm_failed', `AssemblyAI LLM Gateway rejected the request: ${detail}`);
   }

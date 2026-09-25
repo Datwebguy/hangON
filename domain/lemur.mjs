@@ -12,7 +12,7 @@ const DOSSIER_SYSTEM = [
   'You write a short pre-arrival brief for a solo plumbing, electrical, or HVAC technician from a phone call transcript.',
   'Base everything strictly on the transcript. Do not invent details, prices, brands, or equipment models that were not mentioned.',
   'pro_brief: 1-3 sentences on the problem and what was agreed.',
-  'safety_guidance: safety advice that was actually given to the caller during the call, or null if none was given.',
+  'safety_guidance: safety advice that was actually given to the caller during the call, or an empty string if none was given.',
   'parts_checklist: up to 5 parts or tools a technician would reasonably bring for the problem as described; empty if the problem is unclear.',
   'caller_mood_start / caller_mood_end: the caller\'s apparent mood at the start and end of the call, judged from their words.'
 ].join(' ');
@@ -21,7 +21,7 @@ export const DOSSIER_SCHEMA = {
   type: 'object',
   properties: {
     pro_brief: { type: 'string' },
-    safety_guidance: { type: ['string', 'null'] },
+    safety_guidance: { type: 'string' },
     parts_checklist: { type: 'array', items: { type: 'string' } },
     caller_mood_start: { type: 'string', enum: MOODS },
     caller_mood_end: { type: 'string', enum: MOODS }

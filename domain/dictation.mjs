@@ -25,22 +25,23 @@ const EXTRACTION_SYSTEM = [
   'You extract a service appointment from a caller transcript for a solo plumbing, electrical, or HVAC business.',
   'The transcript comes from live speech recognition and may contain filler words and self-corrections ("Thursday, no wait, Friday").',
   'Always keep only the FINAL intended value after a self-correction, and list each correction you resolved in self_corrections.',
-  'Use only what the caller actually said. If a field was not said, return null for it. Never guess names, times, addresses, or phone numbers.',
-  'urgency: "emergency" for active danger or damage (sparking, flooding, burst pipe, no heat in freezing weather), "urgent" for active leaks or loss of service, otherwise "standard"; null if the transcript says nothing about the problem.'
+  'Use only what the caller actually said. If a field was not said, return an empty string for it. Never guess names, times, addresses, or phone numbers.',
+  'urgency: "emergency" for active danger or damage (sparking, flooding, burst pipe, no heat in freezing weather), "urgent" for active leaks or loss of service, otherwise "standard"; "unknown" if the transcript says nothing about the problem.'
 ].join(' ');
 
-const nullableString = { type: ['string', 'null'] };
+// Plain string types only: empty string means "not said" and is normalized to null below.
+const optionalString = { type: 'string' };
 
 export const JOB_SCHEMA = {
   type: 'object',
   properties: {
-    customer_name: nullableString,
-    phone: nullableString,
-    service_type: nullableString,
-    urgency: { type: ['string', 'null'], enum: ['emergency', 'urgent', 'standard', null] },
-    scheduled_time: nullableString,
-    address: nullableString,
-    job_notes: nullableString,
+    customer_name: optionalString,
+    phone: optionalString,
+    service_type: optionalString,
+    urgency: { type: 'string', enum: ['emergency', 'urgent', 'standard', 'unknown'] },
+    scheduled_time: optionalString,
+    address: optionalString,
+    job_notes: optionalString,
     self_corrections: { type: 'array', items: { type: 'string' } }
   },
   required: ['customer_name', 'phone', 'service_type', 'urgency', 'scheduled_time', 'address', 'job_notes', 'self_corrections'],
