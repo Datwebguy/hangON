@@ -353,7 +353,7 @@ async function api(req, res, url) {
       businessName: workspace.name || 'Apex Home Services',
       technicianName: workspace.owner || 'Mike'
     });
-    if (!result.ok) return error(res, 400, 'email_failed', result.error || 'Could not send email.');
+    if (!result.ok) return error(res, result.statusCode || 400, 'email_failed', result.error || 'Could not send email.');
     return sendJson(res, result.queued ? 202 : 200, { data: result });
   }
 

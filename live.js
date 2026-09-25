@@ -177,6 +177,13 @@ function displayBookingReceipt(booking) {
   }
 }
 
+function showEmailStatus(text, ok) {
+  if (!receiptDetails) return;
+  receiptDetails.querySelector('.receipt-row-email')?.remove();
+  appendReceiptRow(receiptDetails, 'Email', text, ok ? 'text-accent' : 'text-warn');
+  receiptDetails.lastElementChild?.classList.add('receipt-row-email');
+}
+
 function dossierView(data = {}) {
   return {
     summary: data.pro_brief,
@@ -515,14 +522,18 @@ async function begin() {
           });
           const emailBody = await emailRes.json().catch(() => ({}));
           if (!emailRes.ok) {
-            return { status: 'failed', message: emailBody.error?.message || 'Could not send the confirmation email.' };
+            const reason = emailBody.error?.message || 'Could not send the confirmation email.';
+            showEmailStatus(`Not sent: ${reason}`, false);
+            return { status: 'failed', message: reason };
           }
+          showEmailStatus(`Sent to ${emailBody.data?.to || args.email}`, true);
           return {
-            status: emailBody.data?.queued ? 'queued' : 'sent',
-            message: emailBody.data?.message || 'Confirmation email handled.',
+            status: 'sent',
+            message: emailBody.data?.message || 'Confirmation email sent.',
             subject: emailBody.data?.subject || null
           };
         } catch (emailError) {
+          showEmailStatus('Not sent: the email request failed.', false);
           return { status: 'failed', message: emailError.message || 'Email request failed.' };
         }
       }
