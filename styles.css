@@ -372,3 +372,4 @@ h3 { font-size: 1.05rem; line-height: 1.3; font-weight: 700; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+.checklist li::first-letter { text-transform: uppercase; }
