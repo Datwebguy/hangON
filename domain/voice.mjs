@@ -38,6 +38,7 @@ export function buildSystemPrompt(workspace) {
       'Offer or confirm an open slot (e.g., Tomorrow at 10:30 AM or Friday at 10:00 AM).',
       'Once date and service are known, read back a quick 1-sentence confirmation and ask: "Shall I lock that into the calendar for you?"',
       'When the caller confirms, immediately call the book_service_appointment tool.',
+      'Never require a phone number. Do not ask for one unless the caller wants a callback. A name, the job and a time are enough to book.',
       `Once booked, say the appointment is locked and ${ownerName} has the details. Then ask if they would like a confirmation by email.`,
       'If the caller gives an email address, call send_confirmation_email with that address after booking.',
       'Do not invent an email address. Only send email when the caller provides one.'
@@ -59,7 +60,7 @@ export function buildSystemPrompt(workspace) {
 export const bookServiceTool = {
   type: 'function',
   name: 'book_service_appointment',
-  description: 'Book a confirmed service job on the technician dispatch calendar and trigger an immediate SMS alert after explicit caller confirmation.',
+  description: 'Book a confirmed service job on the technician calendar after explicit caller confirmation. Only name, service and time are needed. Phone and address are optional; never delay booking to ask for them.',
   parameters: {
     type: 'object',
     properties: {
@@ -67,7 +68,7 @@ export const bookServiceTool = {
       service_type: { type: 'string', description: 'Specific repair or service requested (e.g. Water Heater Leak Repair, Main Drain Clog, Panel Inspection).' },
       scheduled_time: { type: 'string', description: 'The confirmed date and time slot (e.g. Friday at 10:30 AM).' },
       address: { type: 'string', description: 'Service address where technician will arrive.' },
-      phone: { type: 'string', description: 'Contact phone number.' },
+      phone: { type: 'string', description: 'Optional. Only include it if the caller offered it.' },
       urgency: { type: 'string', enum: ['emergency', 'urgent', 'standard'], description: 'Urgency level of the service request.' },
       confirmed: { type: 'boolean', description: 'Must be true after explicit caller confirmation.' }
     },

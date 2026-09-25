@@ -264,8 +264,7 @@ async function executeBookingOnServer(args) {
     record_changed: true,
     appointment_id: body.data.id,
     scheduled_slot: body.data.scheduled_time,
-    sms_alert: 'Queued for Mike Miller',
-    message: 'Job saved on the technician calendar.'
+    message: 'Job saved on the technician calendar. Offer the caller an email confirmation.'
   };
 }
 
@@ -797,7 +796,7 @@ async function runSimulatedScenario(scenario) {
   }
 
   addMessage('agent', `All set${structured.customer_name ? `, ${structured.customer_name}` : ''}. You're booked for ${structured.scheduled_time}${structured.address ? ` at ${structured.address}` : ''}. I'll text Mike the job details now.`);
-  hint.textContent = 'Job booked. Mike gets the details on his phone.';
+  hint.textContent = 'Job booked. It\'s on Mike\'s schedule.';
   title.textContent = 'Call complete';
   status.textContent = 'Job booked';
   updateVisualizer('idle');
