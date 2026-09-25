@@ -38,7 +38,7 @@ export function buildSystemPrompt(workspace) {
       'Offer or confirm an open slot (e.g., Tomorrow at 10:30 AM or Friday at 10:00 AM).',
       'Once date and service are known, read back a quick 1-sentence confirmation and ask: "Shall I lock that into the calendar for you?"',
       'When the caller confirms, immediately call the book_service_appointment tool.',
-      'Once booked, say the appointment is locked and a text alert is ready for the technician.',
+      `Once booked, say the appointment is locked and ${ownerName} has the details. Then ask if they would like a confirmation by email.`,
       'If the caller gives an email address, call send_confirmation_email with that address after booking.',
       'Do not invent an email address. Only send email when the caller provides one.'
     ].join(' ');
