@@ -29,7 +29,7 @@
       title.id = 'operator-auth-title';
       title.textContent = 'Sign in to HangON';
       const description = document.createElement('p');
-      description.textContent = 'Enter your workspace access code to manage today's jobs. It stays on this device session only.';
+      description.textContent = 'Enter your workspace access code to manage today\'s jobs. It stays on this device session only.';
       const label = document.createElement('label');
       label.htmlFor = 'operator-token';
       label.textContent = 'Access code';

@@ -19,7 +19,7 @@ test('postgres calendar store books and lists by workspace', { skip: !hasDb }, a
 
   assert.equal(booked.duplicate, false);
   assert.equal(booked.booking.workspace_id, 'workspace-local');
-  assert.equal(booked.booking.sms_dispatch.status, 'queued');
+  assert.equal(booked.booking.sms_dispatch.status, 'prepared');
 
   const listed = await store.list({ workspaceId: 'workspace-local', limit: 20 });
   assert.ok(listed.some((job) => job.id === booked.booking.id));

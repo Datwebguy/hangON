@@ -1,4 +1,4 @@
-import { Buffer } from 'node:buffer';
+import { structuredCompletion } from './assemblyai-llm.mjs';
 
 export const SERVICE_KEYTERMS = [
   'P-trap',
@@ -19,191 +19,76 @@ export const SERVICE_KEYTERMS = [
   'Oakridge Lane'
 ];
 
-export const STT_DOMAIN_PROMPT = 'Solo service business dispatch for emergency plumbing, electrical, and HVAC repairs. Messy caller speech, background noise, caller self-correcting dates, times, and addresses.';
+export const MAX_TRANSCRIPT_CHARS = 8000;
 
-export const LLM_EXTRACTION_INSTRUCTION = 'Extract clean structured service appointment fields: customer_name, service_type, urgency (emergency/urgent/standard), scheduled_time, address, and job_notes. Resolve any self-corrections so only the final intended time, date, and address is preserved, and eliminate filler words.';
+const EXTRACTION_SYSTEM = [
+  'You extract a service appointment from a caller transcript for a solo plumbing, electrical, or HVAC business.',
+  'The transcript comes from live speech recognition and may contain filler words and self-corrections ("Thursday, no wait, Friday").',
+  'Always keep only the FINAL intended value after a self-correction, and list each correction you resolved in self_corrections.',
+  'Use only what the caller actually said. If a field was not said, return null for it. Never guess names, times, addresses, or phone numbers.',
+  'urgency: "emergency" for active danger or damage (sparking, flooding, burst pipe, no heat in freezing weather), "urgent" for active leaks or loss of service, otherwise "standard"; null if the transcript says nothing about the problem.'
+].join(' ');
 
-/**
- * Intelligent client/server speech cleaner & self-correction resolver
- * Mirrors Universal-3.5 Pro Dictation API behavior for real-time text processing
- */
-export function resolveSelfCorrections(rawText) {
-  if (!rawText || typeof rawText !== 'string') return '';
-  let text = rawText;
+const nullableString = { type: ['string', 'null'] };
 
-  // Remove common filler sounds
-  text = text.replace(/\b(uh|um|er|ah|like|you know|so yeah)\b/gi, '').replace(/\s{2,}/g, ' ').trim();
+export const JOB_SCHEMA = {
+  type: 'object',
+  properties: {
+    customer_name: nullableString,
+    phone: nullableString,
+    service_type: nullableString,
+    urgency: { type: ['string', 'null'], enum: ['emergency', 'urgent', 'standard', null] },
+    scheduled_time: nullableString,
+    address: nullableString,
+    job_notes: nullableString,
+    self_corrections: { type: 'array', items: { type: 'string' } }
+  },
+  required: ['customer_name', 'phone', 'service_type', 'urgency', 'scheduled_time', 'address', 'job_notes', 'self_corrections'],
+  additionalProperties: false
+};
 
-  // Keep the final choice after self-corrections: "Thursday... wait, Friday at 10:30am"
-  text = text.replace(
-    /\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)(?:\s+at\s+\d{1,2}(?::\d{2})?(?:\s*[ap]m)?)?\s*(?:,\s*)?(?:no wait|wait|actually|no[, ]?make that|make it|rather)\s*,?\s*([a-zA-Z]+(?:\s+at\s+\d{1,2}(?::\d{2})?(?:\s*[ap]m)?))/gi,
-    '$1'
-  );
-  text = text.replace(
-    /(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*(?:,\s*)?(?:wait|no|actually|make that)\s*,?\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/gi,
-    '$2'
-  );
-  text = text.replace(
-    /(\d+\s+[a-zA-Z\s]+(?:st|ave|avenue|road|rd|dr|lane|terrace|blvd))\s*(?:,\s*)?(?:wait|no|sorry)\s*,?\s*(\d+\s+[a-zA-Z\s]+(?:st|ave|avenue|road|rd|dr|lane|terrace|blvd))/gi,
-    '$2'
-  );
-
-  return text.replace(/\s{2,}/g, ' ').trim();
-}
-
-export function extractStructuredJob(text) {
-  const resolved = resolveSelfCorrections(text);
-  const lower = resolved.toLowerCase();
-  text = resolved;
-
-  // Detect service type
-  let serviceType = 'General Plumbing / Electrical Repair';
-  if (lower.includes('water heater') || lower.includes('heater')) serviceType = 'Water Heater Leak & Diagnostic';
-  else if (lower.includes('burst') || lower.includes('pipe')) serviceType = 'Emergency Burst Pipe Repair';
-  else if (lower.includes('panel') || lower.includes('breaker') || lower.includes('electric')) serviceType = 'Electrical Subpanel & Circuit Diagnostic';
-  else if (lower.includes('drain') || lower.includes('clog') || lower.includes('sink')) serviceType = 'Main Drain Clog Snaking';
-  else if (lower.includes('sump') || lower.includes('pump')) serviceType = 'Sump Pump Failure Emergency';
-
-  // Detect urgency
-  let urgency = 'standard';
-  if (lower.includes('emergency') || lower.includes('burst') || lower.includes('flooding') || lower.includes('sparking')) {
-    urgency = 'emergency';
-  } else if (lower.includes('leak') || lower.includes('urgent') || lower.includes('asap') || lower.includes('hot water')) {
-    urgency = 'urgent';
-  }
-
-  // Detect scheduled time with self-correction resolution
-  let scheduledTime = 'Tomorrow at 10:30 AM';
-  if (lower.includes('friday') && (lower.includes('10:30') || lower.includes('10'))) {
-    scheduledTime = 'Friday at 10:30 AM';
-  } else if (lower.includes('friday') && lower.includes('2')) {
-    scheduledTime = 'Friday at 2:00 PM';
-  } else if (lower.includes('tomorrow') && lower.includes('morning')) {
-    scheduledTime = 'Tomorrow at 9:00 AM';
-  } else if (lower.includes('tomorrow') && lower.includes('afternoon')) {
-    scheduledTime = 'Tomorrow at 1:30 PM';
-  } else if (lower.includes('today')) {
-    scheduledTime = 'Today at 4:00 PM (Emergency Slot)';
-  }
-
-  // Detect customer name
-  let customerName = 'Caller';
-  const nameMatch = text.match(/(?:my name is|this is|i'm|it's)\s+([A-Z][a-z]+\s+[A-Z][a-z]+)/i);
-  if (nameMatch) {
-    customerName = nameMatch[1];
-  } else if (lower.includes('sarah miller') || lower.includes('sarah')) {
-    customerName = 'Sarah Miller';
-  } else if (lower.includes('mark henderson') || lower.includes('mark')) {
-    customerName = 'Mark Henderson';
-  }
-
-  // Detect address
-  let address = 'Address to be confirmed on arrival';
-  const addressMatch = text.match(/(?:at|on|over on)\s+(\d+\s+[A-Za-z]+(?:\s+(?:terrace|ave|avenue|street|st|road|rd|way|lane|blvd|court|ct))?)/i);
-  if (addressMatch) {
-    address = addressMatch[1];
-    if (!/(?:terrace|ave|avenue|street|st|road|rd|way|lane|blvd|court|ct)/i.test(address)) {
-      address += ' Terrace';
-    }
-  } else if (lower.includes('742 evergreen')) {
-    address = '742 Evergreen Terrace';
-  }
-
-  return {
-    customer_name: customerName,
-    service_type: serviceType,
-    urgency,
-    scheduled_time: scheduledTime,
-    address,
-    job_notes: `Extracted via Universal-3.5 Pro Dictation. Self-correction applied to slot (${scheduledTime}).`,
-    clean_summary: `${serviceType} for ${customerName} at ${address} on ${scheduledTime}`
-  };
+export function cleanSummary(job) {
+  const parts = [job.service_type || 'Service request'];
+  if (job.customer_name) parts.push(`for ${job.customer_name}`);
+  if (job.address) parts.push(`at ${job.address}`);
+  if (job.scheduled_time) parts.push(`on ${job.scheduled_time}`);
+  return parts.join(' ');
 }
 
 /**
- * Call AssemblyAI Dictation API
+ * Turns a caller transcript (already produced by AssemblyAI speech recognition in the
+ * Voice Agent session) into structured job fields via AssemblyAI LLM Gateway.
+ * Throws with a statusCode when the gateway is unconfigured or fails.
  */
-export async function transcribeWithDictation(audioBuffer, options = {}) {
-  const apiKey = options.apiKey || process.env.ASSEMBLYAI_API_KEY;
+export async function extractJobFromTranscript(transcript, options = {}) {
+  const text = String(transcript || '').trim();
+  if (!text) throw Object.assign(new Error('Transcript text is required.'), { statusCode: 422, code: 'transcript_required' });
+  if (text.length > MAX_TRANSCRIPT_CHARS) throw Object.assign(new Error(`Transcript is longer than ${MAX_TRANSCRIPT_CHARS} characters.`), { statusCode: 413, code: 'transcript_too_long' });
 
-  const config = {
-    language_code: 'en_us',
-    stt_prompt: options.stt_prompt || STT_DOMAIN_PROMPT,
-    keyterms_prompt: options.keyterms_prompt || SERVICE_KEYTERMS,
-    llm_instruction: options.llm_instruction || LLM_EXTRACTION_INSTRUCTION
-  };
+  const { data, model, requestId } = await structuredCompletion({
+    system: EXTRACTION_SYSTEM,
+    user: `Caller transcript:\n"""\n${text}\n"""`,
+    schemaName: 'service_appointment',
+    schema: JOB_SCHEMA,
+    maxTokens: 600,
+    fetchImpl: options.fetchImpl
+  });
 
-  if (!apiKey || !audioBuffer) {
-    // Return structured mock result based on text option or fallback
-    const sampleText = options.sampleText || "Hey Mike, my water heater is leaking from the bottom valve, can you come by Thursday? Wait no, make it Friday at 10:30am. It's Sarah Miller at 742 Evergreen.";
-    const structured = extractStructuredJob(sampleText);
-    return {
-      text: sampleText,
-      llm_response: JSON.stringify(structured, null, 2),
-      final_text: structured.clean_summary,
-      structured,
-      model: 'AssemblyAI Universal-3.5 Pro Dictation (Simulation)'
-    };
+  const structured = {};
+  for (const key of Object.keys(JOB_SCHEMA.properties)) {
+    if (key === 'self_corrections') continue;
+    const value = data[key];
+    structured[key] = typeof value === 'string' && value.trim() ? value.trim() : null;
   }
+  if (!['emergency', 'urgent', 'standard'].includes(structured.urgency)) structured.urgency = null;
+  structured.self_corrections = Array.isArray(data.self_corrections) ? data.self_corrections.map(String) : [];
+  structured.clean_summary = cleanSummary(structured);
 
-  // Prepare multipart form data
-  const boundary = '----AssemblyAIDictationBoundary' + Math.random().toString(36).slice(2);
-  const configHeader = `--${boundary}\r\nContent-Disposition: form-data; name="config"\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(config)}\r\n`;
-  const audioHeader = `--${boundary}\r\nContent-Disposition: form-data; name="audio"; filename="utterance.wav"\r\nContent-Type: audio/wav\r\n\r\n`;
-  const footer = `\r\n--${boundary}--\r\n`;
-
-  const body = Buffer.concat([
-    Buffer.from(configHeader, 'utf8'),
-    Buffer.from(audioHeader, 'utf8'),
-    Buffer.isBuffer(audioBuffer) ? audioBuffer : Buffer.from(audioBuffer),
-    Buffer.from(footer, 'utf8')
-  ]);
-
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 6000); // 5s bounded
-    const response = await fetch('https://dictation.assemblyai.com/v1/transcribe/live', {
-      method: 'POST',
-      headers: {
-        Authorization: apiKey,
-        'Content-Type': `multipart/form-data; boundary=${boundary}`,
-        'Content-Length': String(body.length)
-      },
-      body,
-      signal: controller.signal
-    });
-    clearTimeout(timer);
-
-    const data = await response.json().catch(() => ({}));
-    if (response.ok) {
-      const verbatim = data.text || '';
-      const llmOutput = data.llm_response || data.final_text || verbatim;
-      let structured;
-      try {
-        structured = JSON.parse(llmOutput);
-      } catch {
-        structured = extractStructuredJob(verbatim);
-      }
-      return {
-        text: verbatim,
-        llm_response: llmOutput,
-        final_text: data.final_text || structured.clean_summary || verbatim,
-        structured,
-        model: 'AssemblyAI Universal-3.5 Pro Dictation'
-      };
-    }
-  } catch (err) {
-    // Graceful fallback to domain extraction
-  }
-
-  // Graceful fallback if upstream times out or returns error
-  const sample = options.sampleText || 'Emergency repair requested';
-  const structured = extractStructuredJob(sample);
   return {
-    text: sample,
-    llm_response: JSON.stringify(structured, null, 2),
-    final_text: structured.clean_summary,
+    text,
     structured,
-    model: 'AssemblyAI Universal-3.5 Pro Dictation (Fallback)'
+    final_text: structured.clean_summary,
+    model: `AssemblyAI LLM Gateway (${model})`,
+    request_id: requestId
   };
 }

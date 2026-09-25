@@ -54,19 +54,63 @@ const INITIAL_SCHEDULE = [
 const MAX_JOBS = 500;
 
 function normalizeServiceType(rawService) {
-  let serviceType = String(rawService || 'General Service').trim();
-  if (serviceType.length > 50) {
-    if (/plumb|drain|sink|pipe|leak|water heater/i.test(serviceType)) {
-      serviceType = 'Kitchen Plumbing & Pipe Inspection';
-    } else if (/electric|panel|breaker|spark|outlet/i.test(serviceType)) {
-      serviceType = 'Electrical Service & Diagnostic';
-    } else if (/hvac|air condition|ac|heat|cooling|thermostat/i.test(serviceType)) {
-      serviceType = 'HVAC System Diagnostic & Repair';
-    } else {
-      serviceType = serviceType.slice(0, 48) + '...';
-    }
-  }
+  let serviceType = String(rawService).trim();
+  if (serviceType.length > 80) serviceType = serviceType.slice(0, 78) + '…';
   return serviceType.replace(/[\w.-]+@[\w.-]+\.\w+/g, '').replace(/at\s+[\w.-]+\s+dot\s+\w+/gi, '').trim();
+}
+
+function field(value) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+// Builds a job only from what the caller actually said. Missing essentials are an error,
+// never a placeholder; optional fields stay null.
+export function buildJob(input, workspaceId) {
+  if (!input || typeof input !== 'object') {
+    throw Object.assign(new Error('Booking details are missing.'), { statusCode: 400 });
+  }
+  const customerName = field(input.customer_name) || field(input.name);
+  const rawService = field(input.service_type) || field(input.service) || field(input.request_summary);
+  const scheduledTime = field(input.scheduled_time) || field(input.time);
+  const missing = [!customerName && 'customer_name', !rawService && 'service_type', !scheduledTime && 'scheduled_time'].filter(Boolean);
+  if (missing.length) {
+    throw Object.assign(new Error(`Cannot book without: ${missing.join(', ')}.`), { statusCode: 422 });
+  }
+  const serviceType = normalizeServiceType(rawService);
+  const address = field(input.address) || field(input.location);
+  const phone = field(input.phone) || field(input.contact);
+  const urgencyRaw = String(input.urgency || '').toLowerCase();
+  const urgency = ['emergency', 'urgent', 'standard'].includes(urgencyRaw) ? urgencyRaw : null;
+  const notes = field(input.job_notes) || field(input.details?.job_notes) || field(input.details?.notes) || field(input.details?.summary);
+
+  return {
+    id: 'job-' + crypto.randomUUID().slice(0, 8),
+    workspace_id: workspaceId,
+    customer_name: customerName,
+    phone,
+    service_type: serviceType,
+    urgency,
+    scheduled_time: scheduledTime,
+    address,
+    job_notes: notes || 'Booked by HangON during the call.',
+    status: 'confirmed',
+    record_changed: true,
+    dispatched_to: 'Mike (Apex Owner / Pro)',
+    sms_dispatch: {
+      // No SMS provider is wired up; this is the prepared text shown in the UI, not a sent message.
+      status: 'prepared',
+      recipient: 'Mike (Apex Dispatch Phone)',
+      timestamp: new Date().toISOString(),
+      message: `New job: ${[customerName, serviceType, scheduledTime, address || 'address not given'].join(' | ')}${urgency ? ` | Urgency: ${urgency.toUpperCase()}` : ''}`
+    },
+    dictation_metadata: {
+      raw_speech: input.raw_speech || null,
+      cleaned_text: input.cleaned_text || null,
+      self_correction_resolved: Boolean(input.self_correction_resolved),
+      model: field(input.extraction_model)
+    },
+    created_at: new Date().toISOString()
+  };
 }
 
 export function createCalendarStore(filePath = defaultCalendarPath) {
@@ -112,45 +156,8 @@ export function createCalendarStore(filePath = defaultCalendarPath) {
     },
 
     async book(input, { workspaceId = 'workspace-local' } = {}) {
-      if (!input || typeof input !== 'object') {
-        throw new Error('Booking details are missing.');
-      }
-
-      const customerName = (input.customer_name || input.name || 'Caller').trim();
-      const serviceType = normalizeServiceType(input.service_type || input.service || input.request_summary || 'General Service');
-      const scheduledTime = (input.scheduled_time || input.time || 'Next Open Slot (Tomorrow 10:30 AM)').trim();
-      const address = (input.address || input.location || 'Address confirmed on file').trim();
-      const phone = (input.phone || input.contact || '(555) 301-4492').trim();
-      const urgency = String(input.urgency || 'urgent').toLowerCase();
-      const notes = (input.job_notes || input.details?.job_notes || input.details?.notes || input.details?.summary || '').trim();
-
-      const newJob = {
-        id: 'job-' + crypto.randomUUID().slice(0, 8),
-        workspace_id: workspaceId,
-        customer_name: customerName,
-        phone,
-        service_type: serviceType,
-        urgency,
-        scheduled_time: scheduledTime,
-        address,
-        job_notes: notes || 'Booked by HangON during the call.',
-        status: 'confirmed',
-        record_changed: true,
-        dispatched_to: 'Mike (Apex Owner / Pro)',
-        sms_dispatch: {
-          status: 'queued',
-          recipient: 'Mike (Apex Dispatch Phone)',
-          timestamp: new Date().toISOString(),
-          message: `New job: ${customerName} | ${serviceType} | ${scheduledTime} | ${address} | Urgency: ${urgency.toUpperCase()}`
-        },
-        dictation_metadata: {
-          raw_speech: input.raw_speech || null,
-          cleaned_text: input.cleaned_text || null,
-          self_correction_resolved: Boolean(input.self_correction_resolved),
-          model: 'AssemblyAI Universal-3.5 Pro Dictation'
-        },
-        created_at: new Date().toISOString()
-      };
+      const newJob = buildJob(input, workspaceId);
+      const { customer_name: customerName, scheduled_time: scheduledTime } = newJob;
 
       let duplicate = false;
       let booking = newJob;
@@ -236,45 +243,8 @@ export function createPgCalendarStore() {
     },
 
     async book(input, { workspaceId = 'workspace-local' } = {}) {
-      if (!input || typeof input !== 'object') {
-        throw new Error('Booking details are missing.');
-      }
-
-      const customerName = (input.customer_name || input.name || 'Caller').trim();
-      const serviceType = normalizeServiceType(input.service_type || input.service || input.request_summary || 'General Service');
-      const scheduledTime = (input.scheduled_time || input.time || 'Next Open Slot (Tomorrow 10:30 AM)').trim();
-      const address = (input.address || input.location || 'Address confirmed on file').trim();
-      const phone = (input.phone || input.contact || '(555) 301-4492').trim();
-      const urgency = String(input.urgency || 'urgent').toLowerCase();
-      const notes = (input.job_notes || input.details?.job_notes || input.details?.notes || input.details?.summary || '').trim();
-
-      const newJob = {
-        id: 'job-' + crypto.randomUUID().slice(0, 8),
-        workspace_id: workspaceId,
-        customer_name: customerName,
-        phone,
-        service_type: serviceType,
-        urgency,
-        scheduled_time: scheduledTime,
-        address,
-        job_notes: notes || 'Booked by HangON during the call.',
-        status: 'confirmed',
-        record_changed: true,
-        dispatched_to: 'Mike (Apex Owner / Pro)',
-        sms_dispatch: {
-          status: 'queued',
-          recipient: 'Mike (Apex Dispatch Phone)',
-          timestamp: new Date().toISOString(),
-          message: `New job: ${customerName} | ${serviceType} | ${scheduledTime} | ${address} | Urgency: ${urgency.toUpperCase()}`
-        },
-        dictation_metadata: {
-          raw_speech: input.raw_speech || null,
-          cleaned_text: input.cleaned_text || null,
-          self_correction_resolved: Boolean(input.self_correction_resolved),
-          model: 'AssemblyAI Universal-3.5 Pro Dictation'
-        },
-        created_at: new Date().toISOString()
-      };
+      const newJob = buildJob(input, workspaceId);
+      const { customer_name: customerName, scheduled_time: scheduledTime } = newJob;
 
       const db = await ready();
       const existing = await db`

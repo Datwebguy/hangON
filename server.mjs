@@ -6,8 +6,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { publicWorkspace } from './domain/workspace.mjs';
 import { createPreparedRequest, requestProposal, sanitizeDetails, validateRequest } from './domain/request.mjs';
-import { transcribeWithDictation, extractStructuredJob } from './domain/dictation.mjs';
-import { generateLeMURDossier } from './domain/lemur.mjs';
+import { extractJobFromTranscript } from './domain/dictation.mjs';
+import { generateCallDossier } from './domain/lemur.mjs';
 import { configureWebhookIntegration, getPublicWebhookIntegration, getWebhookIntegration, removeWebhookIntegration } from './domain/integration-store.mjs';
 import { buildSystemPrompt, requestTool, bookServiceTool, checkAvailabilityTool, sendConfirmationEmailTool, voiceConfig } from './domain/voice.mjs';
 import { createSession, hasConfiguredOperatorAccess, isProduction, readSession, sessionCookie, verifyOperatorToken } from './domain/security.mjs';
@@ -246,9 +246,9 @@ async function api(req, res, url) {
     try { input = await readBody(req); } catch (e) { return error(res, e.statusCode || 400, 'invalid_json', e.message); }
     try {
       const result = await calendarStore.book(input, { workspaceId: session.workspace_id });
-      return sendJson(res, result.duplicate ? 200 : 201, { data: result.booking, meta: { duplicate: result.duplicate, record_changed: true } });
+      return sendJson(res, result.duplicate ? 200 : 201, { data: result.booking, meta: { duplicate: result.duplicate, record_changed: !result.duplicate } });
     } catch (e) {
-      return error(res, 400, 'booking_failed', e.message);
+      return error(res, e.statusCode || 400, 'booking_failed', e.message);
     }
   }
 
@@ -259,11 +259,14 @@ async function api(req, res, url) {
     if (!session) return;
     if (!csrfOrError(req, res, session)) return;
     if (!rateLimit(req, 'dictate', 30)) return error(res, 429, 'dictate_rate_limited', 'Too many dictation requests.');
-    let input = {};
-    try { input = await readBody(req); } catch { input = {}; }
-    const sampleText = input.utterance || input.text || '';
-    const result = await transcribeWithDictation(null, { sampleText });
-    return sendJson(res, 200, { data: result });
+    let input;
+    try { input = await readBody(req); } catch (e) { return error(res, e.statusCode || 400, 'invalid_json', e.message); }
+    try {
+      const result = await extractJobFromTranscript(input.utterance || input.text);
+      return sendJson(res, 200, { data: result });
+    } catch (e) {
+      return error(res, e.statusCode || 502, e.code || 'extraction_failed', e.message);
+    }
   }
 
   // --- Post-call intelligence dossier ---
@@ -273,12 +276,14 @@ async function api(req, res, url) {
     if (!session) return;
     if (!csrfOrError(req, res, session)) return;
     if (!rateLimit(req, 'lemur', 30)) return error(res, 429, 'lemur_rate_limited', 'Too many dossier requests.');
-    let input = {};
-    try { input = await readBody(req); } catch { input = {}; }
-    const transcript = input.transcript || input.text || '';
-    const metadata = input.metadata || input;
-    const dossier = generateLeMURDossier(transcript, metadata);
-    return sendJson(res, 200, { data: dossier });
+    let input;
+    try { input = await readBody(req); } catch (e) { return error(res, e.statusCode || 400, 'invalid_json', e.message); }
+    try {
+      const dossier = await generateCallDossier(input.transcript || input.text, input.metadata || {});
+      return sendJson(res, 200, { data: dossier });
+    } catch (e) {
+      return error(res, e.statusCode || 502, e.code || 'dossier_failed', e.message);
+    }
   }
 
   if (url.pathname === '/api/integrations/webhook') {
@@ -388,22 +393,27 @@ async function api(req, res, url) {
       const confirmation = verifyConfirmationToken(input.confirmation_token, { workspaceId: session.workspace_id, idempotencyKey: proposal.idempotencyKey, summary: proposal.summary, details: proposal.details, route: proposal.route });
       if (!confirmation.ok) return error(res, 409, 'confirmation_required', 'A fresh confirmation for this exact request is required.', { reason: confirmation.reason });
 
-      // If this request represents a service booking, commit it to the dispatch calendar.
+      // Commit to the dispatch calendar only when the caller actually gave the booking essentials.
       let bookingResult = null;
-      try {
-        const details = validation.value.details || {};
-        bookingResult = await calendarStore.book({
-          customer_name: details.customer_name || details.caller || 'Confirmed Caller',
-          service_type: details.service_type || validation.value.request_summary,
-          scheduled_time: details.scheduled_time || 'Next Available Slot',
-          address: details.address || 'Address confirmed on call',
-          urgency: details.urgency || 'urgent',
-          job_notes: validation.value.request_summary,
-          raw_speech: details.raw_speech || null,
-          cleaned_text: details.cleaned_text || null
-        }, { workspaceId: session.workspace_id });
-      } catch (err) {
-        // Calendar booking failed - continue with request creation
+      let bookingError = null;
+      const details = validation.value.details || {};
+      const customerName = details.customer_name || details.caller;
+      if (customerName && details.service_type && details.scheduled_time) {
+        try {
+          bookingResult = await calendarStore.book({
+            customer_name: customerName,
+            service_type: details.service_type,
+            scheduled_time: details.scheduled_time,
+            address: details.address || null,
+            phone: details.phone || null,
+            urgency: details.urgency || null,
+            job_notes: validation.value.request_summary,
+            raw_speech: details.raw_speech || null,
+            cleaned_text: details.cleaned_text || null
+          }, { workspaceId: session.workspace_id });
+        } catch (err) {
+          bookingError = err.message || 'Calendar booking failed.';
+        }
       }
 
       const created = createPreparedRequest(validation.value, { workspaceId: session.workspace_id, sessionId: session.sid, workspace });
@@ -415,7 +425,7 @@ async function api(req, res, url) {
       }
       const result = await requestStore.create(created, scope);
       res.setHeader('location', '/api/requests/' + result.record.id);
-      return sendJson(res, result.duplicate ? 200 : 201, { data: publicRequest(result.record), meta: { duplicate: result.duplicate, record_changed: true } });
+      return sendJson(res, result.duplicate ? 200 : 201, { data: publicRequest(result.record), meta: { duplicate: result.duplicate, record_changed: Boolean(bookingResult), ...(bookingError ? { booking_error: bookingError } : {}) } });
     }
     return error(res, 405, 'method_not_allowed', 'Use GET or POST for requests.');
   }
@@ -464,6 +474,7 @@ async function handle(req, res) {
     if (req.method === 'HEAD') return res.end();
     return fs.createReadStream(file).pipe(res);
   } catch (e) {
+    console.error(`[hangon] ${id} ${req.method} ${url.pathname} failed: ${e.message}`);
     if (!res.headersSent) return error(res, 500, 'internal_error', 'HangON could not complete the request.');
     res.end();
   }

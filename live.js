@@ -166,6 +166,35 @@ function displayBookingReceipt(booking) {
   }
 }
 
+function dossierView(data = {}) {
+  return {
+    summary: data.pro_brief,
+    sentiment: data.caller_mood?.summary ? `Caller: ${data.caller_mood.summary}` : null,
+    parts: data.parts_checklist
+  };
+}
+
+async function fetchDossier(transcript, metadata) {
+  await ensureDemoSession();
+  const res = await fetch('/api/lemur', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: apiHeaders(),
+    body: JSON.stringify({ transcript, metadata })
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || !body.data) throw new Error(body.error?.message || 'Could not generate the technician brief.');
+  return body.data;
+}
+
+function displayLemurError(message) {
+  if (!lemurDossier) return;
+  lemurDossier.hidden = false;
+  if (lemurSummary) lemurSummary.textContent = `Brief unavailable: ${message}`;
+  if (lemurSentimentScore) lemurSentimentScore.textContent = '—';
+  lemurPartsList?.replaceChildren();
+}
+
 function displayLemurDossier(data = {}) {
   if (!lemurDossier) return;
   lemurDossier.hidden = false;
@@ -188,12 +217,13 @@ async function executeBookingOnServer(args) {
     credentials: 'same-origin',
     headers: apiHeaders(),
     body: JSON.stringify({
-      customer_name: args.customer_name || args.name || 'Sarah Miller',
-      service_type: args.service_type || args.request_summary || 'Water Heater Leak Repair',
-      scheduled_time: args.scheduled_time || 'Friday at 10:30 AM',
-      address: args.address || '742 Evergreen Terrace',
-      phone: args.phone || '(555) 301-4492',
-      urgency: args.urgency || 'urgent',
+      customer_name: args.customer_name || args.name || null,
+      service_type: args.service_type || args.request_summary || null,
+      scheduled_time: args.scheduled_time || null,
+      address: args.address || null,
+      phone: args.phone || null,
+      urgency: args.urgency || null,
+      extraction_model: args.extraction_model || null,
       raw_speech: args.raw_speech || null,
       cleaned_text: args.cleaned_text || null,
       job_notes: args.request_summary || args.details?.summary || '',
@@ -362,6 +392,8 @@ async function begin() {
     let lastEvent = null;
     let flushingTools = false;
     const pending = [];
+    const callLog = [];
+    const callerLines = () => callLog.filter((line) => line.startsWith('Caller: ')).map((line) => line.slice(8)).join(' ');
     const audioQueue = [];
 
     const b64 = (buffer) => {
@@ -501,30 +533,15 @@ async function begin() {
       // Never block the spoken reply on dossier generation.
       void (async () => {
         try {
-          await ensureDemoSession();
-          const lemurRes = await fetch('/api/lemur', {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: apiHeaders(),
-            body: JSON.stringify({
-              transcript: args.request_summary || args.service_type || 'Water heater repair',
-              metadata: {
-                customer_name: args.customer_name || 'Customer',
-                service_type: args.service_type || 'Plumbing Service',
-                scheduled_time: args.scheduled_time || 'Next Open Slot',
-                address: args.address || 'Address on file'
-              }
-            })
-          }).then((r) => r.json());
-          if (lemurRes?.data) {
-            displayLemurDossier({
-              summary: lemurRes.data.pro_brief,
-              sentiment: lemurRes.data.agitation_metrics?.summary,
-              parts: lemurRes.data.parts_checklist
-            });
-          }
-        } catch {
-          // Dossier is optional UI enrichment.
+          const dossier = await fetchDossier(callLog.join('\n'), {
+            customer_name: args.customer_name,
+            service_type: args.service_type,
+            scheduled_time: args.scheduled_time,
+            address: args.address
+          });
+          displayLemurDossier(dossierView(dossier));
+        } catch (dossierError) {
+          displayLemurError(dossierError.message);
         }
       })();
       return result;
@@ -583,6 +600,7 @@ async function begin() {
       if (message.type === 'transcript.user') {
         const text = message.text || '';
         addMessage('caller', text);
+        if (text) callLog.push(`Caller: ${text}`);
         lastEvent = 'transcript.user';
 
         if (/water heater|leak|burst/i.test(text)) {
@@ -608,23 +626,27 @@ async function begin() {
             method: 'POST',
             credentials: 'same-origin',
             headers: apiHeaders(),
-            body: JSON.stringify({ utterance: text })
+            // Send everything the caller has said so far so corrections across turns resolve.
+            body: JSON.stringify({ utterance: callerLines() })
           }))
             .then((r) => r.json())
             .then((data) => {
               if (data.data?.structured) {
                 const s = data.data.structured;
-                updateDictationHUD(text, `${s.service_type} for ${s.customer_name} on ${s.scheduled_time} (${s.address})`);
-                if (targetSlot) targetSlot.textContent = `Suggested time: ${s.scheduled_time}`;
+                updateDictationHUD(text, s.clean_summary);
+                if (targetSlot && s.scheduled_time) targetSlot.textContent = `Suggested time: ${s.scheduled_time}`;
+              } else if (data.error) {
+                updateDictationHUD(text, `Extraction unavailable: ${data.error.message}`);
               }
             })
-            .catch(() => {});
+            .catch((e) => updateDictationHUD(text, `Extraction unavailable: ${e.message}`));
         }, 450);
       }
 
       if (message.type === 'transcript.agent') {
         const text = message.text || '';
         addMessage('agent', text);
+        if (text) callLog.push(`HangON: ${text}`);
         lastEvent = 'transcript.agent';
       }
 
@@ -671,8 +693,8 @@ async function begin() {
 
 async function runSimulatedScenario(scenario) {
   if (simulatedCallRunning) return;
-  simulatedCallRunning = true;
   finish(true);
+  simulatedCallRunning = true;
 
   if (lemurDossier) lemurDossier.hidden = true;
   if (actionReceipt) actionReceipt.hidden = true;
@@ -704,19 +726,37 @@ async function runSimulatedScenario(scenario) {
     credentials: 'same-origin',
     headers: apiHeaders(),
     body: JSON.stringify({ utterance: scenario.callerSpeech })
-  }).then((r) => r.json()).catch(() => ({}));
+  }).then((r) => r.json()).catch((e) => ({ error: { message: e.message } }));
 
-  const structured = dictationRes.data?.structured || scenario.structured;
-  updateDictationHUD(
-    scenario.callerSpeech,
-    `${structured.service_type} for ${structured.customer_name} · ${structured.scheduled_time} · ${structured.address}`
-  );
+  const structured = dictationRes.data?.structured;
+  if (!structured) {
+    const reason = dictationRes.error?.message || 'AssemblyAI extraction failed.';
+    updateDictationHUD(scenario.callerSpeech, `Extraction unavailable: ${reason}`);
+    status.textContent = 'Needs attention';
+    status.className = 'status-chip status-warn';
+    hint.textContent = reason;
+    title.textContent = 'Could not read the call';
+    simulatedCallRunning = false;
+    stop.disabled = true;
+    start.disabled = false;
+    updateVisualizer('idle');
+    return;
+  }
+  structured.extraction_model = dictationRes.data.model;
+  updateDictationHUD(scenario.callerSpeech, structured.clean_summary);
 
   updateVisualizer('speaking');
   title.textContent = 'Confirming details';
   const triageTip = scenario.canvasData?.diagnostic || 'I can help right away.';
   const priceTip = scenario.canvasData?.price || 'Standard rates apply';
-  const confirmationSpeech = `Got it — ${structured.service_type}. First: ${triageTip}. ${structured.scheduled_time} is open on Mike's schedule. Estimate: ${priceTip}. Address ${structured.address}. Shall I lock that in?`;
+  const confirmationSpeech = [
+    `Got it — ${structured.service_type || 'your service request'}.`,
+    `First: ${triageTip}.`,
+    structured.scheduled_time ? `${structured.scheduled_time} is open on Mike's schedule.` : 'What day and time works for you?',
+    `Estimate: ${priceTip}.`,
+    structured.address ? `Address ${structured.address}.` : 'What is the service address?',
+    'Shall I lock that in?'
+  ].join(' ');
   addMessage('agent', confirmationSpeech);
   await new Promise((r) => setTimeout(r, 1800));
 
@@ -747,35 +787,18 @@ async function runSimulatedScenario(scenario) {
   }
 
   try {
-    await ensureDemoSession();
-    const lemurRes = await fetch('/api/lemur', {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: apiHeaders(),
-      body: JSON.stringify({
-        transcript: scenario.callerSpeech,
-        metadata: {
-          customer_name: structured.customer_name,
-          service_type: structured.service_type,
-          scheduled_time: structured.scheduled_time,
-          address: structured.address
-        }
-      })
-    }).then((r) => r.json());
-    if (lemurRes?.data) {
-      displayLemurDossier({
-        summary: lemurRes.data.pro_brief,
-        sentiment: lemurRes.data.agitation_metrics?.summary,
-        parts: lemurRes.data.parts_checklist
-      });
-    } else {
-      displayLemurDossier(scenario.lemurData);
-    }
-  } catch {
-    displayLemurDossier(scenario.lemurData);
+    const dossier = await fetchDossier(`Caller: ${scenario.callerSpeech}\nHangON: ${confirmationSpeech}\nCaller: Yes please — go ahead and lock it in.`, {
+      customer_name: structured.customer_name,
+      service_type: structured.service_type,
+      scheduled_time: structured.scheduled_time,
+      address: structured.address
+    });
+    displayLemurDossier(dossierView(dossier));
+  } catch (dossierError) {
+    displayLemurError(dossierError.message);
   }
 
-  addMessage('agent', `All set, ${structured.customer_name}. You're booked for ${structured.scheduled_time} at ${structured.address}. I'll text Mike the job details now.`);
+  addMessage('agent', `All set${structured.customer_name ? `, ${structured.customer_name}` : ''}. You're booked for ${structured.scheduled_time}${structured.address ? ` at ${structured.address}` : ''}. I'll text Mike the job details now.`);
   hint.textContent = 'Job booked. Mike gets the details on his phone.';
   title.textContent = 'Call complete';
   status.textContent = 'Job booked';
@@ -791,28 +814,11 @@ stop?.addEventListener('click', () => finish(true));
 scenarioWaterHeater?.addEventListener('click', () => {
   runSimulatedScenario({
     callerSpeech: "My water heater is making a banging sound and leaking from the bottom valve. Can you come by Thursday? Oh wait, no, Thursday my wife has the car, make it Friday at 10:30 AM if possible. It is Sarah Miller on 742 Evergreen Terrace.",
-    structured: {
-      customer_name: 'Sarah Miller',
-      service_type: 'Water Heater Leak and Diagnostic',
-      scheduled_time: 'Friday at 10:30 AM',
-      address: '742 Evergreen Terrace',
-      urgency: 'urgent',
-      phone: '(555) 301-4492'
-    },
     canvasData: {
       equipment: 'Rheem 40 Gallon Gas Water Heater',
       diagnostic: 'Advised: Turn yellow shutoff valve clockwise',
       price: '$180 to $240 (Standard Rate)',
       distance: 'Mike is 4.2 miles away on Highland Blvd'
-    },
-    lemurData: {
-      summary: 'Sarah Miller reported active water heater leak pooling under unit. HangON instructed main valve shutoff to prevent structural damage. Appointment locked for Friday at 10:30 AM.',
-      sentiment: '88% Stress to 12% Calm',
-      parts: [
-        '3/4" Brass PEX Fitting and Pressure Relief Valve',
-        'Replacement Thermocouple and Pilot Assembly',
-        'Heavy Duty Pipe Wrench and Teflon Tape'
-      ]
     }
   });
 });
@@ -820,28 +826,11 @@ scenarioWaterHeater?.addEventListener('click', () => {
 scenarioElectrical?.addEventListener('click', () => {
   runSimulatedScenario({
     callerSpeech: "Our main circuit breaker is sparking and half the house has no power. We need someone today. It is Mark Henderson on 14 Oakridge Lane.",
-    structured: {
-      customer_name: 'Mark Henderson',
-      service_type: 'Electrical Subpanel and Sparking Breaker Emergency',
-      scheduled_time: 'Today at 4:00 PM',
-      address: '14 Oakridge Lane',
-      urgency: 'emergency',
-      phone: '(555) 819-2041'
-    },
     canvasData: {
       equipment: 'Square D 200 Amp Main Service Panel',
       diagnostic: 'Safety: Keep panel door closed and avoid contact',
       price: '$150 to $220 (Diagnostic and Breaker Replacement)',
       distance: 'Mike is 3.1 miles away'
-    },
-    lemurData: {
-      summary: 'Mark Henderson called with sparking main breaker panel and partial power loss. Advised safety perimeter around panel. Dispatched emergency slot for Today at 4:00 PM.',
-      sentiment: '92% Stress to 20% Calm',
-      parts: [
-        '200 Amp Main Breaker and GFCI Replacements',
-        'Digital Multimeter and Insulated Tool Kit',
-        'Arc Fault Detection Tester'
-      ]
     }
   });
 });
@@ -849,28 +838,11 @@ scenarioElectrical?.addEventListener('click', () => {
 scenarioHvac?.addEventListener('click', () => {
   runSimulatedScenario({
     callerSpeech: "Our central air conditioner stopped cooling and is blowing lukewarm air. It is ninety degrees outside. Can someone come look at the compressor tomorrow morning? This is David Ramirez at 408 Whispering Pines.",
-    structured: {
-      customer_name: 'David Ramirez',
-      service_type: 'HVAC AC Compressor Diagnostic and Freon Inspection',
-      scheduled_time: 'Tomorrow at 9:00 AM',
-      address: '408 Whispering Pines',
-      urgency: 'urgent',
-      phone: '(555) 728-1934'
-    },
     canvasData: {
       equipment: 'Carrier 3.5 Ton Central AC Condenser',
       diagnostic: 'Triage: Turn thermostat to OFF to prevent compressor seizure',
       price: '$140 to $210 (Diagnostic and Capacitor Test)',
       distance: 'Mike is 2.8 miles away'
-    },
-    lemurData: {
-      summary: 'David Ramirez reported central AC blowing warm air in 90F heat. Guided customer to shut off unit at thermostat to protect compressor motor. Locked dispatch slot for Tomorrow at 9:00 AM.',
-      sentiment: '82% Stress to 18% Calm',
-      parts: [
-        '45/5 Dual Round Run Capacitor',
-        'Digital Manifold Gauge and R-410A Refrigerant',
-        'Contactor Switch Replacement'
-      ]
     }
   });
 });
@@ -878,28 +850,11 @@ scenarioHvac?.addEventListener('click', () => {
 scenarioDrain?.addEventListener('click', () => {
   runSimulatedScenario({
     callerSpeech: "Our kitchen sink is backed up into the dishwasher line. Can someone snake it tomorrow around 1:30 PM? This is Marcus Vance on 19 Elm St.",
-    structured: {
-      customer_name: 'Marcus Vance',
-      service_type: 'Kitchen Sink Drain Snaking',
-      scheduled_time: 'Tomorrow at 1:30 PM',
-      address: '19 Elm St',
-      urgency: 'urgent',
-      phone: '(555) 432-6789'
-    },
     canvasData: {
       equipment: 'Kitchen Sink Dual P-Trap and Drain Line',
       diagnostic: 'Triage: Do not run dishwasher until snaked',
       price: '$120 to $180 (Line Snaking)',
       distance: 'Mike is 5.6 miles away'
-    },
-    lemurData: {
-      summary: 'Marcus Vance reported kitchen sink backing up into dishwasher line. Instructed not to run dishwasher cycle. Confirmed for Tomorrow at 1:30 PM.',
-      sentiment: '65% Stress to 10% Calm',
-      parts: [
-        '50 Ft Motorized Drain Snake Auger',
-        'Drain Enzyme Cleanser',
-        'Replacement PVC Slip Joint Washers'
-      ]
     }
   });
 });

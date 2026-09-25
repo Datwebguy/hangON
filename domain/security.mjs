@@ -5,6 +5,8 @@ const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 
 function secret() {
   if (process.env.HANGON_SESSION_SECRET) return process.env.HANGON_SESSION_SECRET;
+  // A per-process random secret breaks on serverless: each instance would reject the others' cookies.
+  if (isProduction()) throw new Error('HANGON_SESSION_SECRET is required in production.');
   if (!globalThis.__hangonSessionSecret) globalThis.__hangonSessionSecret = crypto.randomBytes(32).toString('hex');
   return globalThis.__hangonSessionSecret;
 }
