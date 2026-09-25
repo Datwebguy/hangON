@@ -1,20 +1,33 @@
 const appointmentsFeed = document.querySelector('#appointmentsFeed');
 const todayScheduleCount = document.querySelector('#todayScheduleCount');
-const nextOpenSlot = document.querySelector('#nextOpenSlot');
+const emergencyCount = document.querySelector('#emergencyCount');
 const headerWorkspaceName = document.querySelector('#headerWorkspaceName');
 
-let allAppointments = [];
-let csrfToken = '';
+function emptyRow(message) {
+  const empty = document.createElement('div');
+  empty.className = 'empty-row';
+  empty.textContent = message;
+  return empty;
+}
+
+function cell(className, primary, secondary, secondaryEmpty) {
+  const col = document.createElement('div');
+  col.className = className;
+  const strong = document.createElement('strong');
+  strong.textContent = primary;
+  const span = document.createElement('span');
+  span.textContent = secondary || secondaryEmpty;
+  if (!secondary) span.classList.add('is-empty');
+  col.append(strong, span);
+  return col;
+}
 
 function renderAppointments(appointments) {
   if (!appointmentsFeed) return;
   appointmentsFeed.replaceChildren();
 
   if (!appointments || !appointments.length) {
-    const empty = document.createElement('div');
-    empty.className = 'empty-row';
-    empty.textContent = 'No jobs yet. Answer a call to book the first one.';
-    appointmentsFeed.append(empty);
+    appointmentsFeed.append(emptyRow('No jobs yet. Answer a call to book the first one.'));
     return;
   }
 
@@ -22,45 +35,31 @@ function renderAppointments(appointments) {
     const row = document.createElement('article');
     row.className = 'appointment-row';
 
-    const primaryCol = document.createElement('div');
-    primaryCol.className = 'apt-primary-col';
-    const customer = document.createElement('strong');
-    customer.className = 'apt-customer';
-    customer.textContent = job.customer_name;
-    const serviceDesc = document.createElement('span');
-    serviceDesc.className = 'apt-service';
-    serviceDesc.textContent = job.service_type;
-    primaryCol.append(customer, serviceDesc);
-
-    const secondaryCol = document.createElement('div');
-    secondaryCol.className = 'apt-secondary-col';
-    const time = document.createElement('strong');
-    time.className = 'apt-time';
-    time.textContent = job.scheduled_time || 'Tomorrow';
-    const address = document.createElement('span');
-    address.className = 'apt-address';
-    address.textContent = job.address || 'Address confirmed';
-    secondaryCol.append(time, address);
-
     const statusCol = document.createElement('div');
     statusCol.className = 'apt-status-col';
+    if (job.urgency === 'emergency') {
+      const urgent = document.createElement('span');
+      urgent.className = 'status-chip status-warn';
+      urgent.textContent = 'Emergency';
+      statusCol.append(urgent);
+    }
     const statusChip = document.createElement('span');
-    statusChip.className = 'status-chip status-safe';
-    statusChip.textContent = 'Confirmed';
+    statusChip.className = job.status === 'cancelled' ? 'status-chip status-neutral' : 'status-chip status-safe';
+    statusChip.textContent = job.status === 'cancelled' ? 'Cancelled' : 'Confirmed';
     statusCol.append(statusChip);
 
-    row.append(primaryCol, secondaryCol, statusCol);
+    row.append(
+      cell('apt-primary-col', job.customer_name, job.service_type, 'Job not described'),
+      cell('apt-secondary-col', job.scheduled_time || 'Time not set', job.address, 'No address given'),
+      statusCol
+    );
     appointmentsFeed.append(row);
   });
 }
 
 async function loadDashboard() {
   try {
-    const sessionRes = await fetch('/api/demo/session', { credentials: 'same-origin' }).catch(() => null);
-    if (sessionRes && sessionRes.ok) {
-      const sessionData = await sessionRes.json().catch(() => ({}));
-      csrfToken = sessionData.data?.csrf || '';
-    }
+    await fetch('/api/demo/session', { credentials: 'same-origin' }).catch(() => null);
 
     const [workspaceRes, calendarRes] = await Promise.all([
       fetch('/api/workspace', { credentials: 'same-origin' }),
@@ -69,38 +68,18 @@ async function loadDashboard() {
 
     if (workspaceRes.ok) {
       const wsData = await workspaceRes.json().catch(() => ({}));
-      if (wsData.data?.name && headerWorkspaceName) {
-        headerWorkspaceName.textContent = wsData.data.name;
-      }
+      if (wsData.data?.name && headerWorkspaceName) headerWorkspaceName.textContent = wsData.data.name;
     }
 
-    if (calendarRes.ok) {
-      const calData = await calendarRes.json().catch(() => ({}));
-      allAppointments = calData.data?.appointments || [];
-      renderAppointments(allAppointments);
-
-      if (todayScheduleCount) {
-        const count = allAppointments.length;
-        todayScheduleCount.textContent = count === 1 ? '1 job' : `${count} jobs`;
-      }
-      if (nextOpenSlot && calData.data?.availability?.next_open_slot) {
-        nextOpenSlot.textContent = calData.data.availability.next_open_slot;
-      }
-    } else {
-      renderAppointments([]);
-    }
-  } catch (err) {
-    // Dashboard load failed - show empty state
-    if (appointmentsFeed) {
-      appointmentsFeed.replaceChildren();
-      const empty = document.createElement('div');
-      empty.className = 'empty-row';
-      empty.textContent = 'Schedule will appear here. Open Answer a call to book a job.';
-      appointmentsFeed.append(empty);
-    }
+    if (!calendarRes.ok) throw new Error('Calendar unavailable');
+    const calData = await calendarRes.json().catch(() => ({}));
+    const appointments = calData.data?.appointments || [];
+    renderAppointments(appointments);
+    if (todayScheduleCount) todayScheduleCount.textContent = String(appointments.length);
+    if (emergencyCount) emergencyCount.textContent = String(appointments.filter((job) => job.urgency === 'emergency').length);
+  } catch {
+    appointmentsFeed?.replaceChildren(emptyRow('The schedule could not load. Refresh to try again.'));
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  loadDashboard();
-});
+document.addEventListener('DOMContentLoaded', loadDashboard);

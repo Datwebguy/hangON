@@ -26,6 +26,7 @@ const EXTRACTION_SYSTEM = [
   'The transcript comes from live speech recognition and may contain filler words and self-corrections ("Thursday, no wait, Friday").',
   'Always keep only the FINAL intended value after a self-correction, and list each correction you resolved in self_corrections.',
   'Use only what the caller actually said. If a field was not said, return an empty string for it. Never guess names, times, addresses, or phone numbers.',
+  'service_type: a short 2 to 5 word description of the problem in plain words, such as "Kitchen sink leak" or "Sparking breaker panel", never a generic word like "repair".',
   'urgency: "emergency" for active danger or damage (sparking, flooding, burst pipe, no heat in freezing weather), "urgent" for active leaks or loss of service, otherwise "standard"; "unknown" if the transcript says nothing about the problem.'
 ].join(' ');
 

@@ -1,10 +1,10 @@
 (function () {
   const preferenceKey = 'hangon.voice';
   const fallbackVoices = [
-    { id: 'anna', label: 'Anna — British' },
-    { id: 'michael', label: 'Michael — US' },
-    { id: 'jane', label: 'Jane — US' },
-    { id: 'alba', label: 'Alba — US' }
+    { id: 'anna', label: 'Anna (British)' },
+    { id: 'michael', label: 'Michael (US)' },
+    { id: 'jane', label: 'Jane (US)' },
+    { id: 'alba', label: 'Alba (US)' }
   ];
 
   function readSaved(voices) {

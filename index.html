@@ -3,205 +3,106 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="HangON answers the phone, confirms the job, and books the visit while you work.">
     <link rel="icon" type="image/png" href="./hangon-logo.png">
-    <title>HangON | Your phone answers and books the job</title>
+    <title>HangON | Never miss a job</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css">
-    <link rel="stylesheet" href="./production.css">
   </head>
   <body>
-    <div class="app-frame">
-      <header class="app-header">
+    <header class="site-header">
+      <div class="container header-row">
         <a class="brand" href="./index.html" aria-label="HangON home">
-          <img class="brand-logo" src="./hangon-logo.png" alt="HangON">
-          <div class="brand-text-group">
-            <span class="brand-name">HangON</span>
-            <span class="brand-sub">Front desk for trades</span>
-          </div>
+          <img class="brand-logo" src="./hangon-logo.png" alt="">
+          <span class="brand-name">HangON</span>
         </a>
-
         <nav class="main-nav" aria-label="Main">
-          <a class="active" href="./index.html">Today's jobs</a>
-          <a href="#how-it-works">How it works</a>
+          <a href="#how">How it works</a>
           <a href="#schedule">Schedule</a>
-          <a href="./live.html" class="nav-highlight">Answer a call</a>
         </nav>
+        <div class="header-actions">
+          <button type="button" class="theme-toggle-btn" aria-label="Switch theme"><span class="theme-icon">Light</span></button>
+          <a class="button button-primary" href="./live.html">Answer a call</a>
+        </div>
+      </div>
+    </header>
 
-        <div class="header-right-group">
-          <button type="button" class="theme-toggle-btn" aria-label="Switch theme">
-            <span class="theme-icon">Light</span>
-          </button>
-          <div class="workspace-status-badge">
-            <span class="pulse-dot" aria-hidden="true"></span>
-            <div class="status-info">
-              <strong id="headerWorkspaceName">Apex Home Services</strong>
-              <span class="status-caption">Ready for calls</span>
-            </div>
+    <main>
+      <section class="container hero">
+        <div class="hero-copy">
+          <p class="eyebrow">For plumbers, electricians and HVAC pros</p>
+          <h1>Never miss a job while your hands are full.</h1>
+          <p class="lead">HangON answers the phone, confirms the details, and books the visit while you work.</p>
+          <div class="button-row">
+            <a class="button button-primary button-lg" href="./live.html">Try a live call</a>
+            <a class="button button-ghost button-lg" href="#schedule">See the schedule</a>
           </div>
         </div>
-      </header>
 
-      <main class="page-shell">
-        <section class="hero-section">
-          <div class="hero-content">
-            <div class="pill-badge">
-              <span class="indicator-dot"></span>
-              <span>Built for solo plumbers, electricians &amp; HVAC pros</span>
-            </div>
-            <h1 class="hero-headline text-balance">Never miss a job while your hands are full.</h1>
-            <p class="hero-subtext text-pretty">
-              HangON answers the phone, figures out the repair, and books the visit on your schedule — while you stay on the job.
-            </p>
-            <div class="hero-cta-group">
-              <a class="button button-primary button-lg" href="./live.html">
-                <span>Try a live call</span>
-              </a>
-              <a class="button button-secondary button-lg" href="#schedule">
-                <span>See today's schedule</span>
-              </a>
-            </div>
+        <figure class="card example-card" aria-label="Example call">
+          <div class="example-block">
+            <span class="label">Caller said</span>
+            <p class="quote">“Can you come Thursday? Actually, make it Friday at 10:30. Sarah Miller, 742 Evergreen.”</p>
           </div>
-
-          <div class="hero-card-preview" aria-label="Example booked job">
-            <div class="preview-header">
-              <div class="preview-avatar">M</div>
-              <div>
-                <strong>Mike's schedule</strong>
-                <span class="tag-status">Just booked from a call</span>
-              </div>
-              <span class="status-chip status-safe ml-auto">Booked</span>
-            </div>
-            <div class="preview-callout">
-              <span class="preview-callout-label">New job</span>
-              <strong>Water heater valve repair</strong>
-              <p>Sarah Miller · Friday 10:30 AM · 742 Evergreen Terrace</p>
-            </div>
-            <div class="preview-action-status">
-              <span class="status-chip status-neutral">On the calendar</span>
-              <span class="status-chip status-neutral">Text sent to Mike</span>
-            </div>
+          <div class="example-arrow" aria-hidden="true"></div>
+          <div class="example-block">
+            <span class="label">HangON booked</span>
+            <dl class="field-grid">
+              <div><dt>Customer</dt><dd>Sarah Miller</dd></div>
+              <div><dt>When</dt><dd class="text-accent">Friday, 10:30 AM</dd></div>
+              <div><dt>Job</dt><dd>Water heater leak</dd></div>
+              <div><dt>Where</dt><dd>742 Evergreen Terrace</dd></div>
+            </dl>
           </div>
-        </section>
+          <figcaption class="caption">Example. The final day wins, even when the caller changes it.</figcaption>
+        </figure>
+      </section>
 
-        <section class="section-block" id="how-it-works">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Simple flow</p>
-              <h2 class="text-balance">From messy call to booked job</h2>
-              <p class="section-intro text-pretty">Callers change their minds mid-sentence. HangON keeps the final answer and books the right time.</p>
-            </div>
+      <section class="container section" id="how">
+        <div class="section-head">
+          <p class="eyebrow">How it works</p>
+          <h2>From ringing phone to booked job</h2>
+        </div>
+        <ol class="steps">
+          <li class="card step"><span class="step-num">1</span><h3>Answer</h3><p>Picks up when you can't.</p></li>
+          <li class="card step"><span class="step-num">2</span><h3>Confirm</h3><p>Reads back the job, time and address.</p></li>
+          <li class="card step"><span class="step-num">3</span><h3>Book</h3><p>Saves the visit and briefs you.</p></li>
+        </ol>
+      </section>
+
+      <section class="container section" id="schedule">
+        <div class="section-head section-head-row">
+          <div>
+            <p class="eyebrow">Schedule</p>
+            <h2>Booked jobs</h2>
           </div>
-
-          <ol class="flow-steps" aria-label="How HangON works">
-            <li class="flow-step">
-              <span class="flow-num">1</span>
-              <div>
-                <strong>Answer</strong>
-                <p>HangON picks up when you can't.</p>
-              </div>
-            </li>
-            <li class="flow-step">
-              <span class="flow-num">2</span>
-              <div>
-                <strong>Confirm</strong>
-                <p>Reads back the job, time, and address.</p>
-              </div>
-            </li>
-            <li class="flow-step">
-              <span class="flow-num">3</span>
-              <div>
-                <strong>Book</strong>
-                <p>Locks the slot and texts you the details.</p>
-              </div>
-            </li>
-          </ol>
-
-          <div class="showcase-grid">
-            <article class="showcase-card showcase-red">
-              <div class="card-tag">
-                <span class="tag-label-red">What the caller said</span>
-              </div>
-              <blockquote class="raw-speech-bubble bubble-red">
-                “My water heater is leaking. Can someone come Thursday? Actually Thursday my wife has the car — make it Friday at 10:30. Sarah Miller on 742 Evergreen.”
-              </blockquote>
-              <div class="comparison-points">
-                <div class="point-item point-red">
-                  <span class="point-badge badge-red">Changed their mind</span>
-                  <span>Thursday became Friday mid-call</span>
-                </div>
-              </div>
-            </article>
-
-            <article class="showcase-card showcase-green">
-              <div class="card-tag">
-                <span class="tag-label-green">What got booked</span>
-              </div>
-              <div class="readback-box box-green">
-                <span class="readback-label text-green">HangON said:</span>
-                <p class="readback-text">“Got it, Sarah. Water heater inspection Friday at 10:30 AM at 742 Evergreen Terrace. Shall I lock that in for Mike?”</p>
-              </div>
-              <div class="structured-payload-view view-green">
-                <div class="payload-row"><span class="k">Customer</span><span class="v">Sarah Miller</span></div>
-                <div class="payload-row"><span class="k">Job</span><span class="v">Water heater inspection</span></div>
-                <div class="payload-row"><span class="k">When</span><span class="v text-green">Friday at 10:30 AM</span></div>
-                <div class="payload-row"><span class="k">Where</span><span class="v">742 Evergreen Terrace</span></div>
-              </div>
-              <div class="executed-action-receipt receipt-green">
-                <div>
-                  <strong class="text-green">Job booked on Mike's calendar</strong>
-                  <span class="receipt-sub">Text alert ready for the technician</span>
-                </div>
-              </div>
-            </article>
+          <a class="button button-ghost" href="./live.html">Answer a call</a>
+        </div>
+        <div class="card schedule-card">
+          <div class="stat-row">
+            <div class="stat"><span class="label">Technician</span><strong>Mike Miller</strong></div>
+            <div class="stat"><span class="label">Jobs</span><strong id="todayScheduleCount">0</strong></div>
+            <div class="stat"><span class="label">Emergencies</span><strong id="emergencyCount">0</strong></div>
+            <div class="stat"><span class="label">Workspace</span><strong id="headerWorkspaceName">Apex Home Services</strong></div>
           </div>
-        </section>
-
-        <section class="section-block" id="schedule">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Live schedule</p>
-              <h2 class="text-balance">Today's jobs</h2>
-              <p class="section-intro text-pretty">Confirmed calls land here. Open a live call to add another booking.</p>
-            </div>
-            <div>
-              <a class="button button-primary" href="./live.html">Answer a call</a>
-            </div>
-          </div>
-
-          <div class="dispatch-container">
-            <div class="dispatch-summary-strip">
-              <div class="summary-metric">
-                <span class="sm-label">Technician</span>
-                <strong class="sm-val">Mike Miller</strong>
-              </div>
-              <div class="summary-metric">
-                <span class="sm-label">Active jobs</span>
-                <strong class="sm-val" id="todayScheduleCount">—</strong>
-              </div>
-              <div class="summary-metric">
-                <span class="sm-label">Next open slot</span>
-                <strong class="sm-val text-green" id="nextOpenSlot">Tomorrow at 10:30 AM</strong>
-              </div>
-            </div>
-            <div class="appointments-feed" id="appointmentsFeed">
-              <div class="empty-row">Loading today's jobs…</div>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer class="app-footer">
-        <div class="footer-content">
-          <p>HangON · Voice front desk for service trades</p>
-          <div class="footer-links">
-            <a href="./live.html">Answer a call</a>
-            <a href="https://github.com/Datwebguy/hangon" target="_blank" rel="noopener">Project page</a>
+          <div class="appointments-feed" id="appointmentsFeed">
+            <div class="empty-row">Loading jobs…</div>
           </div>
         </div>
-      </footer>
-    </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-row">
+        <span>HangON · Voice front desk for trades</span>
+        <nav class="footer-links" aria-label="Footer">
+          <a href="./live.html">Answer a call</a>
+          <a href="https://github.com/Datwebguy/hangon" target="_blank" rel="noopener">GitHub</a>
+        </nav>
+      </div>
+    </footer>
 
     <script src="./theme-toggle.js"></script>
     <script src="./auth-ui.js"></script>

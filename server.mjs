@@ -18,7 +18,7 @@ import { isEmailConfigured, sendBookingEmail } from './domain/email.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4180);
-const publicFiles = new Set(['index.html', 'live.html', 'styles.css', 'production.css', 'app.next.js', 'live.js', 'voice-ui.js', 'auth-ui.js', 'theme-toggle.js', 'pcm-processor.js', 'hangon-logo.png']);
+const publicFiles = new Set(['index.html', 'live.html', 'styles.css', 'app.next.js', 'live.js', 'voice-ui.js', 'auth-ui.js', 'theme-toggle.js', 'pcm-processor.js', 'hangon-logo.png']);
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png' };
 const rateBuckets = new Map();
 

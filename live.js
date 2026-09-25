@@ -17,12 +17,14 @@ const actionReceipt = document.querySelector('#actionReceipt');
 const receiptDetails = document.querySelector('#receiptDetails');
 const smsMessage = document.querySelector('#smsMessage');
 
-// Voice to Canvas Elements
-const voiceCanvasCard = document.querySelector('#voiceCanvasCard');
-const canvasEquipment = document.querySelector('#canvasEquipment');
-const canvasDiagnostic = document.querySelector('#canvasDiagnostic');
-const canvasPrice = document.querySelector('#canvasPrice');
-const canvasProDistance = document.querySelector('#canvasProDistance');
+// Job fields filled from the AssemblyAI extraction
+const jobFields = {
+  customer_name: document.querySelector('#jobCustomer'),
+  service_type: document.querySelector('#jobService'),
+  scheduled_time: document.querySelector('#jobWhen'),
+  address: document.querySelector('#jobWhere'),
+  urgency: document.querySelector('#jobUrgency')
+};
 
 // Post Call Dossier Elements
 const lemurDossier = document.querySelector('#lemurDossier');
@@ -100,11 +102,21 @@ function updateDictationHUD(raw, cleaned) {
   if (cleanedSpeechText) cleanedSpeechText.textContent = cleaned || 'Building the booking summary…';
 }
 
-function updateVoiceCanvas(data = {}) {
-  if (canvasEquipment && data.equipment) canvasEquipment.textContent = data.equipment;
-  if (canvasDiagnostic && data.diagnostic) canvasDiagnostic.textContent = data.diagnostic;
-  if (canvasPrice && data.price) canvasPrice.textContent = data.price;
-  if (canvasProDistance && data.distance) canvasProDistance.textContent = data.distance;
+function renderJobFields(structured = {}) {
+  Object.entries(jobFields).forEach(([key, el]) => {
+    if (!el) return;
+    const value = structured[key];
+    el.textContent = value ? (key === 'urgency' ? value[0].toUpperCase() + value.slice(1) : value) : 'Not given';
+    el.classList.toggle('is-empty', !value);
+  });
+}
+
+function resetJobFields() {
+  Object.values(jobFields).forEach((el) => {
+    if (!el) return;
+    el.textContent = 'Waiting';
+    el.classList.add('is-empty');
+  });
 }
 
 async function ensureDemoSession() {
@@ -154,22 +166,21 @@ function displayBookingReceipt(booking) {
 
   if (receiptDetails) {
     receiptDetails.replaceChildren();
-    appendReceiptRow(receiptDetails, 'Customer', booking.customer_name || '');
-    appendReceiptRow(receiptDetails, 'Job', booking.service_type || '');
-    appendReceiptRow(receiptDetails, 'When', booking.scheduled_time || '');
-    appendReceiptRow(receiptDetails, 'Where', booking.address || '');
-    appendReceiptRow(receiptDetails, 'Status', 'On Mike\'s calendar', 'text-safe');
+    appendReceiptRow(receiptDetails, 'Customer', booking.customer_name || 'Not given');
+    appendReceiptRow(receiptDetails, 'Job', booking.service_type || 'Not given');
+    appendReceiptRow(receiptDetails, 'When', booking.scheduled_time || 'Not given');
+    appendReceiptRow(receiptDetails, 'Where', booking.address || 'Not given');
   }
 
   if (smsMessage) {
-    smsMessage.textContent = booking.sms_dispatch?.message || `DISPATCH CONFIRMED: ${booking.customer_name} | ${booking.service_type} | ${booking.scheduled_time} | ${booking.address} | Urgency: ${booking.urgency?.toUpperCase()}`;
+    smsMessage.textContent = booking.sms_dispatch?.message || '';
   }
 }
 
 function dossierView(data = {}) {
   return {
     summary: data.pro_brief,
-    sentiment: data.caller_mood?.summary ? `Caller: ${data.caller_mood.summary}` : null,
+    sentiment: data.caller_mood?.summary || null,
     parts: data.parts_checklist
   };
 }
@@ -191,7 +202,7 @@ function displayLemurError(message) {
   if (!lemurDossier) return;
   lemurDossier.hidden = false;
   if (lemurSummary) lemurSummary.textContent = `Brief unavailable: ${message}`;
-  if (lemurSentimentScore) lemurSentimentScore.textContent = '—';
+  if (lemurSentimentScore) lemurSentimentScore.textContent = 'Unknown';
   lemurPartsList?.replaceChildren();
 }
 
@@ -283,14 +294,10 @@ function setReady() {
   status.textContent = 'Ready';
   status.className = 'status-chip status-safe';
   title.textContent = 'Ready when you are';
-  hint.textContent = 'Press Start call, or try a sample call above.';
+  hint.textContent = 'Press Start call, or try a sample call.';
   updateVisualizer('idle');
 
-  if (canvasEquipment) canvasEquipment.textContent = 'Listening…';
-  if (canvasDiagnostic) canvasDiagnostic.textContent = 'Waiting for details…';
-  if (canvasPrice) canvasPrice.textContent = 'Shown during the call';
-  if (canvasProDistance) canvasProDistance.textContent = 'Mike Miller · On call';
-  if (canvasStatusBadge) canvasStatusBadge.textContent = 'Idle';
+  resetJobFields();
   if (rawSpeechText) rawSpeechText.textContent = 'Waiting for the caller…';
   if (cleanedSpeechText) cleanedSpeechText.textContent = 'Waiting…';
   if (targetSlot) targetSlot.textContent = 'No time chosen yet';
@@ -443,7 +450,7 @@ async function begin() {
         type: 'session.update',
         session: {
           system_prompt: config.system_prompt,
-          greeting: 'Apex Home Services, this is HangON. Mike is on a job — how can I help?',
+          greeting: 'Apex Home Services, this is HangON. Mike is on a job. How can I help?',
           input: {
             format: { encoding: 'audio/pcm' },
             // Fast turn-taking for live calls (AssemblyAI: balanced | min_latency | max_accuracy).
@@ -603,22 +610,6 @@ async function begin() {
         if (text) callLog.push(`Caller: ${text}`);
         lastEvent = 'transcript.user';
 
-        if (/water heater|leak|burst/i.test(text)) {
-          updateVoiceCanvas({
-            equipment: 'Residential Water Heater',
-            diagnostic: 'Triage: Turn main yellow valve clockwise to shut off water',
-            price: '$180 to $240 (Standard Rate)',
-            distance: 'Mike is 4.2 miles away on Highland Blvd'
-          });
-        } else if (/breaker|panel|electric|spark/i.test(text)) {
-          updateVoiceCanvas({
-            equipment: '200 Amp Main Electrical Subpanel',
-            diagnostic: 'Safety: Maintain perimeter and avoid panel contact',
-            price: '$150 to $220 (Diagnostic and Breaker Replacement)',
-            distance: 'Mike is 4.2 miles away'
-          });
-        }
-
         // Debounce HUD extraction so every partial transcript doesn't hit the server.
         clearTimeout(window.__hangonDictateTimer);
         window.__hangonDictateTimer = setTimeout(() => {
@@ -634,6 +625,7 @@ async function begin() {
               if (data.data?.structured) {
                 const s = data.data.structured;
                 updateDictationHUD(text, s.clean_summary);
+                renderJobFields(s);
                 if (targetSlot && s.scheduled_time) targetSlot.textContent = `Suggested time: ${s.scheduled_time}`;
               } else if (data.error) {
                 updateDictationHUD(text, `Extraction unavailable: ${data.error.message}`);
@@ -706,7 +698,7 @@ async function runSimulatedScenario(scenario) {
   title.textContent = 'Sample call running';
   hint.textContent = 'Watch HangON confirm the job and book the visit.';
 
-  addMessage('agent', 'Apex Home Services, this is HangON. Mike is on a job right now — how can I help?');
+  addMessage('agent', 'Apex Home Services, this is HangON. Mike is on a job right now. How can I help?');
   updateVisualizer('speaking');
   await new Promise((r) => setTimeout(r, 1200));
 
@@ -715,8 +707,6 @@ async function runSimulatedScenario(scenario) {
   addMessage('caller', scenario.callerSpeech);
   updateDictationHUD(scenario.callerSpeech, 'Catching the final day and time…');
 
-  updateVoiceCanvas(scenario.canvasData);
-  if (canvasStatusBadge) canvasStatusBadge.textContent = 'Live';
 
   await new Promise((r) => setTimeout(r, 1500));
 
@@ -744,16 +734,13 @@ async function runSimulatedScenario(scenario) {
   }
   structured.extraction_model = dictationRes.data.model;
   updateDictationHUD(scenario.callerSpeech, structured.clean_summary);
+  renderJobFields(structured);
 
   updateVisualizer('speaking');
   title.textContent = 'Confirming details';
-  const triageTip = scenario.canvasData?.diagnostic || 'I can help right away.';
-  const priceTip = scenario.canvasData?.price || 'Standard rates apply';
   const confirmationSpeech = [
-    `Got it — ${structured.service_type || 'your service request'}.`,
-    `First: ${triageTip}.`,
+    `Got it: ${structured.service_type || 'your service request'}.`,
     structured.scheduled_time ? `${structured.scheduled_time} is open on Mike's schedule.` : 'What day and time works for you?',
-    `Estimate: ${priceTip}.`,
     structured.address ? `Address ${structured.address}.` : 'What is the service address?',
     'Shall I lock that in?'
   ].join(' ');
@@ -762,7 +749,7 @@ async function runSimulatedScenario(scenario) {
 
   updateVisualizer('listening');
   title.textContent = 'Caller confirming';
-  addMessage('caller', 'Yes please — go ahead and lock it in.');
+  addMessage('caller', 'Yes please, go ahead and lock it in.');
   await new Promise((r) => setTimeout(r, 1200));
 
   updateVisualizer('speaking');
@@ -787,7 +774,7 @@ async function runSimulatedScenario(scenario) {
   }
 
   try {
-    const dossier = await fetchDossier(`Caller: ${scenario.callerSpeech}\nHangON: ${confirmationSpeech}\nCaller: Yes please — go ahead and lock it in.`, {
+    const dossier = await fetchDossier(`Caller: ${scenario.callerSpeech}\nHangON: ${confirmationSpeech}\nCaller: Yes please, go ahead and lock it in.`, {
       customer_name: structured.customer_name,
       service_type: structured.service_type,
       scheduled_time: structured.scheduled_time,
@@ -813,48 +800,24 @@ stop?.addEventListener('click', () => finish(true));
 
 scenarioWaterHeater?.addEventListener('click', () => {
   runSimulatedScenario({
-    callerSpeech: "My water heater is making a banging sound and leaking from the bottom valve. Can you come by Thursday? Oh wait, no, Thursday my wife has the car, make it Friday at 10:30 AM if possible. It is Sarah Miller on 742 Evergreen Terrace.",
-    canvasData: {
-      equipment: 'Rheem 40 Gallon Gas Water Heater',
-      diagnostic: 'Advised: Turn yellow shutoff valve clockwise',
-      price: '$180 to $240 (Standard Rate)',
-      distance: 'Mike is 4.2 miles away on Highland Blvd'
-    }
+    callerSpeech: "My water heater is making a banging sound and leaking from the bottom valve. Can you come by Thursday? Oh wait, no, Thursday my wife has the car, make it Friday at 10:30 AM if possible. It is Sarah Miller on 742 Evergreen Terrace."
   });
 });
 
 scenarioElectrical?.addEventListener('click', () => {
   runSimulatedScenario({
-    callerSpeech: "Our main circuit breaker is sparking and half the house has no power. We need someone today. It is Mark Henderson on 14 Oakridge Lane.",
-    canvasData: {
-      equipment: 'Square D 200 Amp Main Service Panel',
-      diagnostic: 'Safety: Keep panel door closed and avoid contact',
-      price: '$150 to $220 (Diagnostic and Breaker Replacement)',
-      distance: 'Mike is 3.1 miles away'
-    }
+    callerSpeech: "Our main circuit breaker is sparking and half the house has no power. We need someone today. It is Mark Henderson on 14 Oakridge Lane."
   });
 });
 
 scenarioHvac?.addEventListener('click', () => {
   runSimulatedScenario({
-    callerSpeech: "Our central air conditioner stopped cooling and is blowing lukewarm air. It is ninety degrees outside. Can someone come look at the compressor tomorrow morning? This is David Ramirez at 408 Whispering Pines.",
-    canvasData: {
-      equipment: 'Carrier 3.5 Ton Central AC Condenser',
-      diagnostic: 'Triage: Turn thermostat to OFF to prevent compressor seizure',
-      price: '$140 to $210 (Diagnostic and Capacitor Test)',
-      distance: 'Mike is 2.8 miles away'
-    }
+    callerSpeech: "Our central air conditioner stopped cooling and is blowing lukewarm air. It is ninety degrees outside. Can someone come look at the compressor tomorrow morning? This is David Ramirez at 408 Whispering Pines."
   });
 });
 
 scenarioDrain?.addEventListener('click', () => {
   runSimulatedScenario({
-    callerSpeech: "Our kitchen sink is backed up into the dishwasher line. Can someone snake it tomorrow around 1:30 PM? This is Marcus Vance on 19 Elm St.",
-    canvasData: {
-      equipment: 'Kitchen Sink Dual P-Trap and Drain Line',
-      diagnostic: 'Triage: Do not run dishwasher until snaked',
-      price: '$120 to $180 (Line Snaking)',
-      distance: 'Mike is 5.6 miles away'
-    }
+    callerSpeech: "Our kitchen sink is backed up into the dishwasher line. Can someone snake it tomorrow around 1:30 PM? This is Marcus Vance on 19 Elm St."
   });
 });
