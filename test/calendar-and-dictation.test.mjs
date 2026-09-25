@@ -131,3 +131,27 @@ test('call dossier comes from the gateway and never carries invented prices or s
 
   await withKey(undefined, () => assert.rejects(generateCallDossier('Caller: hi'), (e) => e.statusCode === 503));
 });
+
+test('gateway client moves past models the account cannot use and reports when none work', async () => {
+  const { resetModelCache } = await import('../domain/assemblyai-llm.mjs');
+  resetModelCache();
+  const tried = [];
+  const denyFirst = async (url, options) => {
+    const { model } = JSON.parse(options.body);
+    tried.push(model);
+    if (tried.length === 1) {
+      return new Response(JSON.stringify({ metadata: { errors: ['Your account does not have access to this LLM Gateway model'] }, message: 'invalid request body', code: 400 }), { status: 400 });
+    }
+    return new Response(JSON.stringify({ model, choices: [{ message: { content: JSON.stringify({ customer_name: 'Dana', phone: '', service_type: 'Leak', urgency: 'unknown', scheduled_time: '', address: '', job_notes: '', self_corrections: [] }) } }] }), { status: 200 });
+  };
+  const result = await withKey('test-key', () => extractJobFromTranscript('leak, this is Dana', { fetchImpl: denyFirst }));
+  assert.equal(tried.length, 2);
+  assert.ok(result.model.includes(tried[1]));
+  assert.equal(result.structured.urgency, null);
+  assert.equal(result.structured.address, null);
+
+  resetModelCache();
+  const denyAll = async () => new Response(JSON.stringify({ metadata: { errors: ['Your account does not have access to this LLM Gateway model'] } }), { status: 400 });
+  await withKey('test-key', () => assert.rejects(extractJobFromTranscript('leak', { fetchImpl: denyAll }), (e) => e.code === 'llm_no_model_access'));
+  resetModelCache();
+});
