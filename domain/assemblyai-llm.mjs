@@ -10,6 +10,8 @@ const GATEWAY_URL = 'https://llm-gateway.assemblyai.com/v1/chat/completions';
 // allowed a model we move to the next one and remember whichever answered.
 const CANDIDATE_MODELS = ['gemini-2.5-flash-lite', 'qwen3.5-4b-32k-fast', 'gpt-5-nano', 'claude-haiku-4-5-20251001'];
 let workingModel = null;
+// Models that reject response_format get the schema in the prompt instead; replies are still parsed and checked.
+const promptSchemaModels = new Set();
 
 function fail(statusCode, code, message) {
   return Object.assign(new Error(message), { statusCode, code });
@@ -23,6 +25,7 @@ export function candidateModels() {
 
 export function resetModelCache() {
   workingModel = null;
+  promptSchemaModels.clear();
 }
 
 export function isLLMConfigured() {
@@ -34,11 +37,22 @@ function errorDetail(body, status) {
   return specific || body.error?.message || (typeof body.error === 'string' ? body.error : '') || body.message || `HTTP ${status}`;
 }
 
+function isResponseFormatError(body) {
+  return /does not support response_format/i.test(errorDetail(body, 0));
+}
+
 function isModelAccessError(body) {
   return /access to this LLM Gateway model|model.*not (available|supported|found)/i.test(errorDetail(body, 0));
 }
 
 async function requestOnce(model, { apiKey, system, user, schemaName, schema, maxTokens, timeoutMs, fetchImpl }) {
+  const schemaInPrompt = promptSchemaModels.has(model);
+  const systemContent = schemaInPrompt
+    ? `${system}
+
+Reply with ONLY a JSON object (no prose, no code fences) that matches this JSON Schema:
+${JSON.stringify(schema)}`
+    : system;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -49,10 +63,10 @@ async function requestOnce(model, { apiKey, system, user, schemaName, schema, ma
         model,
         max_tokens: maxTokens,
         messages: [
-          { role: 'system', content: system },
+          { role: 'system', content: systemContent },
           { role: 'user', content: user }
         ],
-        response_format: { type: 'json_schema', json_schema: { name: schemaName, schema, strict: true } }
+        ...(schemaInPrompt ? {} : { response_format: { type: 'json_schema', json_schema: { name: schemaName, schema, strict: true } } })
       }),
       signal: controller.signal
     });
@@ -74,7 +88,12 @@ export async function structuredCompletion({ system, user, schemaName, schema, m
 
   const denied = [];
   for (const model of candidateModels()) {
-    const { response, body } = await requestOnce(model, { apiKey, system, user, schemaName, schema, maxTokens, timeoutMs, fetchImpl });
+    const args = { apiKey, system, user, schemaName, schema, maxTokens, timeoutMs, fetchImpl };
+    let { response, body } = await requestOnce(model, args);
+    if (!response.ok && isResponseFormatError(body) && !promptSchemaModels.has(model)) {
+      promptSchemaModels.add(model);
+      ({ response, body } = await requestOnce(model, args));
+    }
     if (!response.ok) {
       console.error(`[hangon] LLM Gateway ${response.status} (${model}): ${JSON.stringify(body).slice(0, 1000)}`);
       if (isModelAccessError(body)) {
@@ -86,7 +105,7 @@ export async function structuredCompletion({ system, user, schemaName, schema, m
     const content = body.choices?.[0]?.message?.content;
     let parsed;
     try {
-      parsed = typeof content === 'string' ? JSON.parse(content) : null;
+      parsed = typeof content === 'string' ? JSON.parse(content.replace(/^s*```(?:json)?s*|s*```s*$/g, '')) : null;
     } catch {
       parsed = null;
     }
