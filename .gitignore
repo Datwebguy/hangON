@@ -35,3 +35,5 @@ node_modules/.remotion/
 
 # Raw demo recordings (frames, audio, browser profiles).
 demo-video/raw/
+demo-video/public/take/
+demo-video/public/vo/
