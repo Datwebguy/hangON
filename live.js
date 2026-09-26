@@ -529,6 +529,9 @@ async function begin() {
         }
       }
 
+      if (args.confirmed !== true) {
+        return { status: 'not_booked', message: 'Nothing was booked. Read the job, time, name and address back to the caller and wait for a clear yes before booking.' };
+      }
       let result;
       try {
         result = await executeBookingOnServer(args);
