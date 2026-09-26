@@ -116,7 +116,7 @@ export const checkAvailabilityTool = {
 export const sendConfirmationEmailTool = {
   type: 'function',
   name: 'send_confirmation_email',
-  description: 'Email the caller a clear booking confirmation after the appointment is locked. Only use an email address the caller provided.',
+  description: 'Email the caller a booking confirmation. Only call this after the caller has said their email address and confirmed its spelling.',
   parameters: {
     type: 'object',
     properties: {

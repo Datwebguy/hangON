@@ -505,6 +505,9 @@ async function begin() {
       }
 
       if (toolName === 'send_confirmation_email') {
+        if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(String(args.email || '').trim())) {
+          return { status: 'need_email', message: 'No email address yet. Ask the caller for their email address, spell it back, and call this tool again once they confirm.' };
+        }
         try {
           await ensureDemoSession();
           const emailRes = await fetch('/api/email/confirmation', {
