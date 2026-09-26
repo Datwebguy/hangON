@@ -451,8 +451,8 @@ async function begin() {
           greeting: 'Apex Home Services, this is HangON. Mike is on a job. How can I help?',
           input: {
             format: { encoding: 'audio/pcm' },
-            // Fast turn-taking for live calls (AssemblyAI: balanced | min_latency | max_accuracy).
-            transcription_mode: 'min_latency',
+            // Adaptive pacing: gives callers who pause mid-thought ("Tuesday... actually, no") room to finish.
+            transcription_mode: 'balanced',
             keyterms: [
               'P-trap',
               'Water heater',
