@@ -1,4 +1,5 @@
 import { SERVICE_KEYTERMS } from './dictation.mjs';
+import { hoursSummary, labelFor, nowLocal, scheduleConfig, upcomingDays } from './schedule.mjs';
 
 const DEFAULT_VOICES = [
   { id: 'anna', label: 'Anna (British)' },
@@ -22,26 +23,34 @@ export function voiceConfig(workspace) {
   return { voices, defaultVoice: voices.some((voice) => voice.id === requested) ? requested : voices[0].id };
 }
 
-export function buildSystemPrompt(workspace) {
+export function buildSystemPrompt(workspace, now = new Date()) {
   const isSoloService = Boolean(workspace?.business_type || workspace?.capabilities?.actions?.enabled);
   const orgName = workspace?.name || 'Apex Plumbing & Electrical Dispatch';
-  const ownerName = workspace?.owner || 'Mike';
+  const ownerName = String(workspace?.owner || 'Mike').split(' (')[0];
 
   if (isSoloService) {
+    const config = scheduleConfig(workspace);
+    const days = upcomingDays(config, now).map((d) => `${d.label} = ${d.date}${d.open ? '' : ' (closed)'}`).join('; ');
     return [
-      `You are HangON, the intelligent voice front desk for ${orgName}.`,
-      `The owner and lead technician, ${ownerName}, is currently on a job and cannot pick up the phone.`,
-      'You handle incoming calls for home service contractors, including plumbing, electrical, HVAC, and field trade repairs.',
-      'Keep your responses brief, fast, and conversational — 1 to 2 short sentences maximum per turn to minimize speaking latency.',
-      'Listen carefully. If there is an emergency or leak, reassure the caller and give one clear triage safety step.',
-      'If the caller corrects themselves (e.g., saying "Thursday... no wait, Friday at 10:30am"), instantly resolve to their final choice.',
-      'Offer or confirm an open slot (e.g., Tomorrow at 10:30 AM or Friday at 10:00 AM).',
-      'Once date and service are known, read back a quick 1-sentence confirmation and ask: "Shall I lock that into the calendar for you?"',
-      'When the caller confirms, immediately call the book_service_appointment tool.',
-      'Never require a phone number. Do not ask for one unless the caller wants a callback. A name, the job and a time are enough to book.',
-      `Once booked, say the appointment is locked and ${ownerName} has the details. Then ask if they would like a confirmation by email.`,
-      'If the caller gives an email address, call send_confirmation_email with that address after booking.',
-      'Do not invent an email address. Only send email when the caller provides one.'
+      `You are HangON, the voice front desk for ${orgName}. ${ownerName} is on a job and cannot pick up, so you answer for him.`,
+      `Right now it is ${labelFor(nowLocal(config, now))} (${config.timezone}). Upcoming dates: ${days}.`,
+      `Working hours: ${hoursSummary(config)}.`,
+      'Sound like a calm, friendly receptionist. Speak in short natural sentences and never rush the caller.',
+      'Let the caller explain in their own words and wait until they finish. Acknowledge what they said before moving on.',
+      'Ask one question at a time. If the problem is unclear, ask a useful follow up, for example where the leak is, whether water is still running, or how long it has been happening.',
+      'If there is active danger or damage, give one clear safety step.',
+      'Ask the caller what day and time works best for them. Never suggest or assume a day before they tell you their preference.',
+      'When they give a time, convert it to YYYY-MM-DDTHH:mm using the dates above and call check_calendar_availability with preferred_start. If it is open, confirm it. If not, explain briefly and offer the open_slots the tool returns. Never invent times or availability.',
+      'If the caller corrects themselves, for example "Thursday, no, Friday", use their final choice.',
+      'Ask for their name, and the service address if they have not given it.',
+      'Never require a phone number.',
+      'Before booking, read back the job, the day and time, the name and the address in one sentence, and ask if you should book it.',
+      'Only after a clear yes, call book_service_appointment with scheduled_at set to the confirmed YYYY-MM-DDTHH:mm.',
+      `After it is booked, tell them it is on ${ownerName}'s schedule, then ask if they would like a confirmation by email.`,
+      'If they want one, ask for the address, then spell it back and ask them to confirm it is right. Only call send_confirmation_email after they confirm the spelling.',
+      'Only say an email was sent after send_confirmation_email returns status sent. If it fails, say so honestly.',
+      'Never invent an email address, a price, or a time.',
+      'Before ending, ask if there is anything else, then close warmly.'
     ].join(' ');
   }
 
@@ -66,13 +75,13 @@ export const bookServiceTool = {
     properties: {
       customer_name: { type: 'string', description: 'Customer or caller name.' },
       service_type: { type: 'string', description: 'Specific repair or service requested (e.g. Water Heater Leak Repair, Main Drain Clog, Panel Inspection).' },
-      scheduled_time: { type: 'string', description: 'The confirmed date and time slot (e.g. Friday at 10:30 AM).' },
+      scheduled_at: { type: 'string', description: 'Confirmed local start time as YYYY-MM-DDTHH:mm, checked with check_calendar_availability.' },
       address: { type: 'string', description: 'Service address where technician will arrive.' },
       phone: { type: 'string', description: 'Optional. Only include it if the caller offered it.' },
       urgency: { type: 'string', enum: ['emergency', 'urgent', 'standard'], description: 'Urgency level of the service request.' },
       confirmed: { type: 'boolean', description: 'Must be true after explicit caller confirmation.' }
     },
-    required: ['customer_name', 'service_type', 'scheduled_time', 'confirmed']
+    required: ['customer_name', 'service_type', 'scheduled_at', 'confirmed']
   }
 };
 
@@ -94,12 +103,13 @@ export const requestTool = {
 export const checkAvailabilityTool = {
   type: 'function',
   name: 'check_calendar_availability',
-  description: 'Check available appointment slots on the technician dispatch calendar.',
+  description: 'Check whether the time the caller asked for is free on the technician calendar. Returns available, or the next real open_slots.',
   parameters: {
     type: 'object',
     properties: {
-      preferred_time: { type: 'string', description: 'Preferred time mentioned by caller.' }
-    }
+      preferred_start: { type: 'string', description: 'The time the caller asked for, as local YYYY-MM-DDTHH:mm.' }
+    },
+    required: ['preferred_start']
   }
 };
 

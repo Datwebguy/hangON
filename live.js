@@ -238,6 +238,7 @@ async function executeBookingOnServer(args) {
       customer_name: args.customer_name || args.name || null,
       service_type: args.service_type || args.request_summary || null,
       scheduled_time: args.scheduled_time || null,
+      scheduled_at: args.scheduled_at || null,
       address: args.address || null,
       phone: args.phone || null,
       urgency: args.urgency || null,
@@ -251,6 +252,8 @@ async function executeBookingOnServer(args) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok || !body.data) {
     const message = body.error?.message || 'Could not save the booking. Please try again.';
+    const openSlots = body.error?.details?.open_slots;
+    if (response.status === 409) return { status: 'slot_unavailable', message, open_slots: openSlots || [] };
     if (changeStatus) {
       changeStatus.textContent = 'Booking failed';
       changeStatus.className = 'status-chip status-warn';
@@ -268,28 +271,17 @@ async function executeBookingOnServer(args) {
   };
 }
 
-async function checkAvailabilityOnServer(preferredTime = '') {
+async function checkAvailabilityOnServer(preferredStart = '') {
   await ensureDemoSession();
   const url = new URL('/api/calendar', window.location.origin);
-  if (preferredTime) url.searchParams.set('preferred_time', preferredTime);
+  url.searchParams.set('preferred_start', preferredStart);
+  url.searchParams.set('limit', '1');
   const response = await fetch(url, { credentials: 'same-origin' });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    return {
-      available: true,
-      requested_time: preferredTime,
-      verified_open_slots: ['Tomorrow at 10:30 AM', 'Tomorrow at 3:30 PM', 'Friday at 10:30 AM'],
-      technician: 'Mike Miller'
-    };
+  if (!response.ok || !body.data?.availability) {
+    return { status: 'error', message: body.error?.message || 'The calendar could not be checked. Tell the caller and ask them to try again.' };
   }
-  const availability = body.data?.availability || {};
-  return {
-    available: Boolean(availability.available || availability.next_open_slot),
-    requested_time: preferredTime,
-    verified_open_slots: availability.recommended_slots || ['Tomorrow at 10:30 AM'],
-    next_open_slot: availability.next_open_slot,
-    technician: 'Mike Miller'
-  };
+  return body.data.availability;
 }
 
 function setReady() {
@@ -500,7 +492,7 @@ async function begin() {
       const toolName = call.name;
 
       if (toolName === 'check_calendar_availability') {
-        return checkAvailabilityOnServer(args.preferred_time || '');
+        return checkAvailabilityOnServer(args.preferred_start || '');
       }
 
       if (toolName === 'send_confirmation_email') {
@@ -547,6 +539,7 @@ async function begin() {
           message: bookingError.message || 'Booking could not be saved.'
         };
       }
+      if (result?.status !== 'booked') return result;
       // Never block the spoken reply on dossier generation.
       void (async () => {
         try {

@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { labelFor, parseLocal } from './schedule.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createJsonStore } from './json-store.mjs';
@@ -71,7 +72,8 @@ export function buildJob(input, workspaceId) {
   }
   const customerName = field(input.customer_name) || field(input.name);
   const rawService = field(input.service_type) || field(input.service) || field(input.request_summary);
-  const scheduledTime = field(input.scheduled_time) || field(input.time);
+  const scheduledAt = parseLocal(input.scheduled_at) ? String(input.scheduled_at).slice(0, 16) : null;
+  const scheduledTime = (scheduledAt && labelFor(scheduledAt)) || field(input.scheduled_time) || field(input.time);
   const missing = [!customerName && 'customer_name', !rawService && 'service_type', !scheduledTime && 'scheduled_time'].filter(Boolean);
   if (missing.length) {
     throw Object.assign(new Error(`Cannot book without: ${missing.join(', ')}.`), { statusCode: 422 });
@@ -91,6 +93,7 @@ export function buildJob(input, workspaceId) {
     service_type: serviceType,
     urgency,
     scheduled_time: scheduledTime,
+    scheduled_at: scheduledAt,
     address,
     job_notes: notes || 'Booked by HangON during the call.',
     status: 'confirmed',
@@ -134,26 +137,6 @@ export function createCalendarStore(filePath = defaultCalendarPath) {
         .slice(0, capped);
     },
 
-    async checkAvailability(preferredTime = '', { workspaceId } = {}) {
-      const current = await ensureSeeded();
-      const lower = String(preferredTime || '').toLowerCase().trim();
-      const scoped = current.filter((job) => !workspaceId || !job.workspace_id || job.workspace_id === workspaceId);
-      const conflict = lower
-        ? scoped.some((job) => job.scheduled_time.toLowerCase().includes(lower) && job.status !== 'cancelled')
-        : false;
-      const recommendedSlots = [
-        'Tomorrow at 10:30 AM',
-        'Tomorrow at 3:30 PM',
-        'Friday at 10:00 AM',
-        'Friday at 2:00 PM'
-      ];
-      return {
-        available: Boolean(lower) && !conflict,
-        preferred_time: preferredTime,
-        recommended_slots: recommendedSlots,
-        next_open_slot: recommendedSlots[0]
-      };
-    },
 
     async book(input, { workspaceId = 'workspace-local' } = {}) {
       const newJob = buildJob(input, workspaceId);
@@ -209,38 +192,6 @@ export function createPgCalendarStore() {
       return rows.map((row) => row.payload);
     },
 
-    async checkAvailability(preferredTime = '', { workspaceId } = {}) {
-      const db = await ready();
-      const lower = String(preferredTime || '').toLowerCase().trim();
-      const recommendedSlots = [
-        'Tomorrow at 10:30 AM',
-        'Tomorrow at 3:30 PM',
-        'Friday at 10:00 AM',
-        'Friday at 2:00 PM'
-      ];
-      if (!lower) {
-        return {
-          available: false,
-          preferred_time: preferredTime,
-          recommended_slots: recommendedSlots,
-          next_open_slot: recommendedSlots[0]
-        };
-      }
-      const rows = workspaceId
-        ? await db`
-            SELECT scheduled_time, payload->>'status' AS status
-            FROM calendar_jobs
-            WHERE workspace_id = ${workspaceId}
-          `
-        : await db`SELECT scheduled_time, payload->>'status' AS status FROM calendar_jobs`;
-      const conflict = rows.some((job) => String(job.scheduled_time).toLowerCase().includes(lower) && job.status !== 'cancelled');
-      return {
-        available: !conflict,
-        preferred_time: preferredTime,
-        recommended_slots: recommendedSlots,
-        next_open_slot: recommendedSlots[0]
-      };
-    },
 
     async book(input, { workspaceId = 'workspace-local' } = {}) {
       const newJob = buildJob(input, workspaceId);

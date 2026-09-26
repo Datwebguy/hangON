@@ -15,6 +15,7 @@ import { createConfirmationToken, verifyConfirmationToken } from './domain/confi
 import { readWorkspace } from './domain/db.mjs';
 import { getStores, initStores } from './domain/stores.mjs';
 import { isEmailConfigured, sendBookingEmail } from './domain/email.mjs';
+import { checkSlot, scheduleConfig } from './domain/schedule.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4180);
@@ -231,9 +232,13 @@ async function api(req, res, url) {
     if (!session) return;
     const requested = Number(url.searchParams.get('limit') || 50);
     const limit = Number.isInteger(requested) ? Math.min(Math.max(requested, 1), 100) : 50;
-    const preferred = url.searchParams.get('preferred_time') || '';
+    const preferred = url.searchParams.get('preferred_start');
     const appointments = await calendarStore.list({ workspaceId: session.workspace_id, limit });
-    const availability = await calendarStore.checkAvailability(preferred, { workspaceId: session.workspace_id });
+    let availability = null;
+    if (preferred) {
+      const jobs = await calendarStore.list({ workspaceId: session.workspace_id, limit: 100 });
+      availability = checkSlot(jobs, preferred, scheduleConfig(await cachedWorkspace(session.workspace_id)));
+    }
     return sendJson(res, 200, { data: { appointments, availability }, meta: { limit } });
   }
 
@@ -244,6 +249,11 @@ async function api(req, res, url) {
     if (!csrfOrError(req, res, session)) return;
     let input;
     try { input = await readBody(req); } catch (e) { return error(res, e.statusCode || 400, 'invalid_json', e.message); }
+    if (input.scheduled_at) {
+      const jobs = await calendarStore.list({ workspaceId: session.workspace_id, limit: 100 });
+      const slot = checkSlot(jobs, input.scheduled_at, scheduleConfig(await cachedWorkspace(session.workspace_id)));
+      if (!slot.available) return error(res, 409, 'slot_unavailable', `That time is not available (${slot.reason}).`, { open_slots: slot.open_slots || [] });
+    }
     try {
       const result = await calendarStore.book(input, { workspaceId: session.workspace_id });
       return sendJson(res, result.duplicate ? 200 : 201, { data: result.booking, meta: { duplicate: result.duplicate, record_changed: !result.duplicate } });
