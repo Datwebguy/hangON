@@ -37,3 +37,7 @@ node_modules/.remotion/
 demo-video/raw/
 demo-video/public/take/
 demo-video/public/vo/
+
+# Local only notes and helpers
+demo-video/VIDEO_PROMPT.md
+start-with-key.ps1

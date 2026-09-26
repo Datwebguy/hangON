@@ -9,9 +9,10 @@
     "db:down": "docker compose down",
     "db:migrate": "node scripts/migrate.mjs",
     "test": "node --test test/*.test.mjs",
-    "video:studio": "remotion studio demo-video/src/index.jsx",
-    "video:render": "remotion render demo-video/src/index.jsx HangONDemo demo-video/out/hangon-demo.mp4 --codec=h264 --audio --public-dir=demo-video/public",
-    "video:still": "remotion still demo-video/src/index.jsx HangONDemo demo-video/out/hangon-demo.png --frame=900 --public-dir=demo-video/public"
+    "video:studio": "remotion studio demo-video/src/index.jsx --public-dir=demo-video/public",
+    "video:render": "remotion render demo-video/src/index.jsx HangONFinal demo-video/out/hangon-demo-final.mp4 --codec=h264 --crf=18 --public-dir=demo-video/public",
+    "video:record": "node demo-video/rig/record.mjs demo-video/raw/take --grab",
+    "video:edit": "node demo-video/rig/build-edl.mjs"
   },
   "devDependencies": {
     "@remotion/bundler": "^4.0.524",

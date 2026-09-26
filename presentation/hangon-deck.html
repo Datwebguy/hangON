@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HangON deck</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=block" rel="stylesheet">
+<style>
+  @page { size: 1920px 1080px; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Plus Jakarta Sans", system-ui, sans-serif; color: #0f1b17; }
+  .slide { width: 1920px; height: 1080px; page-break-after: always; position: relative; overflow: hidden; background: #f5f7f6; padding: 90px 120px; }
+  .dark { background: #0b0f0e; color: #e9f0ed; }
+  .kicker { font-size: 24px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #0b9468; margin-bottom: 20px; }
+  .dark .kicker { color: #34d399; }
+  h1 { font-size: 140px; font-weight: 800; letter-spacing: -.045em; line-height: 1; }
+  h2 { font-size: 72px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; }
+  .sub { font-size: 36px; color: #5a6a65; line-height: 1.4; margin-top: 22px; }
+  .dark .sub { color: #95a59f; }
+  .shot { border-radius: 18px; box-shadow: 0 30px 70px rgba(15,27,23,.18), 0 3px 10px rgba(15,27,23,.08); display: block; }
+  .row { display: flex; gap: 60px; align-items: center; height: 100%; }
+  .col-text { width: 560px; flex: none; }
+  .note { display: flex; gap: 18px; align-items: flex-start; margin-top: 34px; font-size: 30px; line-height: 1.35; }
+  .note b { color: #0b9468; }
+  .dot { flex: none; width: 40px; height: 40px; border-radius: 50%; background: #0b9468; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 22px; margin-top: 2px; }
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; margin-top: 90px; }
+  .step { background: #fff; border-radius: 24px; padding: 44px 36px; border: 1px solid #dde6e2; }
+  .step .n { font-size: 26px; font-weight: 800; color: #0b9468; margin-bottom: 26px; }
+  .step h3 { font-size: 44px; font-weight: 800; margin-bottom: 14px; letter-spacing: -.02em; }
+  .step p { font-size: 27px; color: #5a6a65; line-height: 1.4; }
+  .pipe { display: flex; align-items: center; gap: 22px; margin-top: 80px; }
+  .node { flex: 1; border-radius: 24px; padding: 40px 34px; background: #fff; border: 1px solid #dde6e2; min-height: 300px; }
+  .node.aai { background: #0b9468; color: #fff; border: none; }
+  .node .who { font-size: 22px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .7; margin-bottom: 14px; }
+  .node h3 { font-size: 40px; font-weight: 800; margin-bottom: 16px; letter-spacing: -.02em; }
+  .node p { font-size: 26px; line-height: 1.4; opacity: .85; }
+  .arrow { font-size: 56px; color: #0b9468; font-weight: 800; }
+  .logo { width: 100px; height: 100px; border-radius: 24px; }
+  .foot { position: absolute; left: 120px; bottom: 50px; font-size: 22px; color: #83928d; }
+</style>
+</head>
+<body>
+
+<!-- 1. Title -->
+<section class="slide">
+  <div class="row">
+    <div class="col-text" style="width:720px">
+      <img class="logo" src="../hangon-logo.png" alt="">
+      <h1 style="margin-top:36px">HangON</h1>
+      <p class="sub" style="color:#0f1b17;font-weight:600;font-size:44px">Your phone answers and books the job while your hands are full.</p>
+      <p class="sub">An AI front desk for solo plumbers, electricians and HVAC pros.</p>
+    </div>
+    <img class="shot" src="img/home.jpg" style="width:900px">
+  </div>
+  <div class="foot">tryhangon.xyz · AssemblyAI Voice Agent Hackathon</div>
+</section>
+
+<!-- 2. Problem -->
+<section class="slide dark" style="display:flex;flex-direction:column;justify-content:center">
+  <div class="kicker">The problem</div>
+  <h2 style="font-size:104px;max-width:1500px">Mike is under a sink.<br>His phone rings.</h2>
+  <p class="sub" style="font-size:48px;margin-top:40px;max-width:1400px">He can't answer. The caller hangs up and books the next plumber. <span style="color:#34d399;font-weight:700">That job is gone.</span></p>
+</section>
+
+<!-- 3. How it works -->
+<section class="slide">
+  <div class="kicker">How HangON works</div>
+  <h2>It handles the whole call, like a real receptionist.</h2>
+  <div class="steps">
+    <div class="step"><div class="n">01</div><h3>Answers</h3><p>Picks up, listens, and asks what's wrong.</p></div>
+    <div class="step"><div class="n">02</div><h3>Understands</h3><p>Keeps the caller's final answer, even when they change their mind.</p></div>
+    <div class="step"><div class="n">03</div><h3>Books</h3><p>Checks the real calendar and books only after the caller says yes.</p></div>
+    <div class="step"><div class="n">04</div><h3>Follows up</h3><p>Emails the caller and gives the technician a brief.</p></div>
+  </div>
+</section>
+
+<!-- 4. Messy speech -->
+<section class="slide">
+  <div class="row">
+    <div class="col-text">
+      <div class="kicker">Real call</div>
+      <h2>Callers change their minds. HangON keeps up.</h2>
+      <div class="note"><div class="dot">1</div><div>She said <b>"Tuesday… actually, no. Wednesday at 2."</b></div></div>
+      <div class="note"><div class="dot">2</div><div>HangON filled in the job with her <b>final answer</b>: Wednesday.</div></div>
+    </div>
+    <img class="shot" src="img/correction.jpg" style="width:1120px">
+  </div>
+</section>
+
+<!-- 5. Real calendar -->
+<section class="slide">
+  <div class="row">
+    <div class="col-text">
+      <div class="kicker">Real call</div>
+      <h2>It checks the real calendar.</h2>
+      <div class="note"><div class="dot">1</div><div>Wednesday at 2 was <b>already booked</b>.</div></div>
+      <div class="note"><div class="dot">2</div><div>It offered <b>real open slots</b>. She picked Friday at 9:30.</div></div>
+      <div class="note"><div class="dot">3</div><div>It read everything back and booked it <b>after she said yes</b>.</div></div>
+    </div>
+    <img class="shot" src="img/booked.jpg" style="width:1120px">
+  </div>
+</section>
+
+<!-- 6. Outcome -->
+<section class="slide">
+  <div class="kicker">After the call</div>
+  <h2>Booked. Emailed. Briefed.</h2>
+  <div style="display:flex;gap:40px;margin-top:56px">
+    <div style="flex:1"><img class="shot" src="img/results.jpg" style="width:100%"><p class="sub" style="font-size:28px">The job is on the schedule, and Mike gets a brief: what's wrong and what to bring.</p></div>
+    <div style="flex:1"><img class="shot" src="img/inbox.jpg" style="width:100%"><p class="sub" style="font-size:28px">The caller gets a confirmation email with the exact job, time and address.</p></div>
+  </div>
+</section>
+
+<!-- 7. AssemblyAI -->
+<section class="slide">
+  <div class="kicker">Powered by AssemblyAI</div>
+  <h2>Two AssemblyAI products do the heavy lifting.</h2>
+  <div class="pipe">
+    <div class="node"><div class="who">In</div><h3>The caller</h3><p>Speaks naturally on the website.</p></div>
+    <div class="arrow">→</div>
+    <div class="node aai"><div class="who">AssemblyAI</div><h3>Voice Agent API</h3><p>Listens and talks back in real time, lets the caller interrupt, and triggers actions: check calendar, book, send email.</p></div>
+    <div class="arrow">→</div>
+    <div class="node aai"><div class="who">AssemblyAI</div><h3>LLM Gateway</h3><p>Turns what was said into clean job details, and writes the technician's brief after the call.</p></div>
+    <div class="arrow">→</div>
+    <div class="node"><div class="who">Out</div><h3>The result</h3><p>A booked job in the calendar and an email sent with Resend.</p></div>
+  </div>
+</section>
+
+<!-- 8. Close -->
+<section class="slide dark" style="display:flex;flex-direction:column;justify-content:center">
+  <img class="logo" src="../hangon-logo.png" alt="">
+  <h2 style="font-size:104px;margin-top:40px">Never miss a job<br>while your hands are full.</h2>
+  <p class="sub" style="font-size:44px;margin-top:40px">Try a live call: <b style="color:#34d399">tryhangon.xyz</b></p>
+  <p class="sub" style="font-size:30px">github.com/Datwebguy/hangON</p>
+</section>
+
+</body>
+</html>
