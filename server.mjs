@@ -15,7 +15,7 @@ import { createConfirmationToken, verifyConfirmationToken } from './domain/confi
 import { readWorkspace } from './domain/db.mjs';
 import { getStores, initStores } from './domain/stores.mjs';
 import { isEmailConfigured, sendBookingEmail } from './domain/email.mjs';
-import { checkSlot, scheduleConfig } from './domain/schedule.mjs';
+import { checkSlot, labelFor, scheduleConfig } from './domain/schedule.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4180);
@@ -356,12 +356,13 @@ async function api(req, res, url) {
       booking: {
         customer_name: input.customer_name,
         service_type: input.service_type,
-        scheduled_time: input.scheduled_time,
+        // The agent may pass the exact YYYY-MM-DDTHH:mm; callers should read a normal date.
+        scheduled_time: labelFor(input.scheduled_time) || labelFor(input.scheduled_at) || input.scheduled_time,
         address: input.address,
         phone: input.phone
       },
       businessName: workspace.name || 'Apex Home Services',
-      technicianName: workspace.owner || 'Mike'
+      technicianName: String(workspace.owner || 'Mike').split(' (')[0]
     });
     if (!result.ok) return error(res, result.statusCode || 400, 'email_failed', result.error || 'Could not send email.');
     return sendJson(res, result.queued ? 202 : 200, { data: result });

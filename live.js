@@ -42,6 +42,8 @@ const voice = window.HangOnVoice?.mount(document.querySelector('#voicePlacement'
 let csrfToken = '';
 let session = null;
 let simulatedCallRunning = false;
+let bookedJob = null;
+let lastExtraction = null;
 
 function pcm(encoded) {
   const raw = atob(encoded);
@@ -150,6 +152,9 @@ function appendReceiptRow(container, label, value, valueClass = '') {
 }
 
 function displayBookingReceipt(booking) {
+  bookedJob = booking;
+  renderJobFields(booking);
+  if (cleanedSpeechText) cleanedSpeechText.textContent = `Booked: ${[booking.service_type, booking.customer_name, booking.scheduled_time, booking.address].filter(Boolean).join(' · ')}`;
   if (!actionReceipt) return;
   actionReceipt.hidden = false;
   if (changeStatus) {
@@ -333,6 +338,10 @@ function finish(resetUi = true) {
 }
 
 async function begin() {
+  setReady();
+  bookedJob = null;
+  lastExtraction = null;
+  conversation?.querySelectorAll('.message').forEach((m) => m.remove());
   voice?.setDisabled(true);
   start.disabled = true;
   status.textContent = 'Connecting';
@@ -504,11 +513,12 @@ async function begin() {
             headers: apiHeaders(),
             body: JSON.stringify({
               email: args.email,
-              customer_name: args.customer_name,
-              service_type: args.service_type,
-              scheduled_time: args.scheduled_time,
-              address: args.address,
-              phone: args.phone
+              // Prefer the job that was actually booked over the agent's paraphrase.
+              customer_name: bookedJob?.customer_name || args.customer_name,
+              service_type: bookedJob?.service_type || args.service_type,
+              scheduled_time: bookedJob?.scheduled_time || args.scheduled_time,
+              address: bookedJob?.address || args.address,
+              phone: bookedJob?.phone || args.phone
             })
           });
           const emailBody = await emailRes.json().catch(() => ({}));
@@ -628,17 +638,20 @@ async function begin() {
           }))
             .then((r) => r.json())
             .then((data) => {
+              // Once a job is booked, the panel shows the booking, not the caller's earlier wording.
+              if (bookedJob) return;
               if (data.data?.structured) {
                 const s = data.data.structured;
+                lastExtraction = s;
                 updateDictationHUD(text, s.clean_summary);
                 renderJobFields(s);
-                if (targetSlot && s.scheduled_time) targetSlot.textContent = `Suggested time: ${s.scheduled_time}`;
-              } else if (data.error) {
+                if (targetSlot && s.scheduled_time) targetSlot.textContent = `Caller asked for: ${s.scheduled_time}`;
+              } else if (data.error && !lastExtraction) {
                 updateDictationHUD(text, `Extraction unavailable: ${data.error.message}`);
               }
             })
-            .catch((e) => updateDictationHUD(text, `Extraction unavailable: ${e.message}`));
-        }, 450);
+            .catch((e) => { if (!lastExtraction && !bookedJob) updateDictationHUD(text, `Extraction unavailable: ${e.message}`); });
+        }, 1200);
       }
 
       if (message.type === 'transcript.agent') {
@@ -802,7 +815,13 @@ async function runSimulatedScenario(scenario) {
 }
 
 start?.addEventListener('click', begin);
-stop?.addEventListener('click', () => finish(true));
+stop?.addEventListener('click', () => {
+  finish(false);
+  status.textContent = bookedJob ? 'Call ended · job booked' : 'Call ended';
+  status.className = bookedJob ? 'status-chip status-safe' : 'status-chip status-neutral';
+  title.textContent = 'Call ended';
+  hint.textContent = bookedJob ? 'The booking and brief are below.' : 'Press Start call to try again.';
+});
 
 scenarioWaterHeater?.addEventListener('click', () => {
   runSimulatedScenario({
