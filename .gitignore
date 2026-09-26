@@ -32,3 +32,6 @@ demo-video/public/narration.wav
 demo-video/public/narration-edge.mp3
 node_modules/.remotion/
 .env*
+
+# Raw demo recordings (frames, audio, browser profiles).
+demo-video/raw/
